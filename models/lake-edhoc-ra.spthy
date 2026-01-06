@@ -72,12 +72,6 @@ equations: get_DH_cred(id(x,y,z))=y,
 
 
 
-
-
-
-
-
-
 #include "Headers.splib"
 
 
@@ -140,7 +134,7 @@ let JudgeI = 0
 
 // Initiator with long term authentication key ~skI and long term DH share ~I
 // computerId is only used to keep track of the machine on which the key exists
-let I(~cid, ~skI, ~I, ~ak, ~measurement, ID_CRED_R) =
+let I(~cid, ~skI, ~I, ~ak, ID_CRED_R) =
     in(<method,suitesI,C_I,EAD_1>); // we let the attacker fully control the parameters used2 by a session
     event MethodOk(method);
     new ~X; // DH share
@@ -186,10 +180,9 @@ let I(~cid, ~skI, ~I, ~ak, ~measurement, ID_CRED_R) =
 			if (verify(SIGNATURE_or_MAC_2,<'Signature1',ID_CRED_R,TH_2,pkR,EAD_2,MAC_2>, pkR) = sigtrue) then(
 
 				// Construction of EAD_3
-				let measurement_hash = hash(~measurement) in
-				let signature = sign(<'Signature1',CRED_I, nonceR, measurement_hash>,'rep', ~ak) in
-				let EAD_3 = <CRED_I, nonceR, measurement_hash, signature> in
-				event AttestationGeneratedI(~cid, method_zero, pkI, pkR, nonceR, measurement_hash, signature, ~ak, ~X, G_YX);
+				let signature = sign(<'Signature1',CRED_I, nonceR>,'rep', ~ak) in
+				let EAD_3 = <CRED_I, nonceR, signature> in
+				event AttestationGeneratedI(~cid, method_zero, pkI, pkR, nonceR, signature, ~ak, ~X, G_YX);
 
 				let TH_3 = hash(<wrap(TH_2), plaintext_2, pkR>) in
     	        event THIShared(pkI, TH_3); 		
@@ -229,10 +222,9 @@ let I(~cid, ~skI, ~I, ~ak, ~measurement, ID_CRED_R) =
 	    	    
 	    	if (SIGNATURE_or_MAC_2 = MAC_2) then (
 				// Construction of EAD_3
-				let measurement_hash = hash(~measurement) in
-				let signature = sign(<'Signature1',CRED_I, nonceR, measurement_hash>,'rep', ~ak) in
-				let EAD_3 = <CRED_I, nonceR, measurement_hash, signature> in
-				event AttestationGeneratedI(~cid, method_zero, pkI, pkR, nonceR, measurement_hash, signature, ~ak, ~X, G_YX);
+				let signature = sign(<'Signature1',CRED_I, nonceR>,'rep', ~ak) in
+				let EAD_3 = <CRED_I, nonceR, signature> in
+				event AttestationGeneratedI(~cid, method_one, pkI, pkR, nonceR, signature, ~ak, ~X, G_YX);
 
 				let TH_3 = hash(<wrap(TH_2), plaintext_2, pkR>) in
     	        event THIShared(pkI, TH_3); 		
@@ -270,10 +262,9 @@ let I(~cid, ~skI, ~I, ~ak, ~measurement, ID_CRED_R) =
 			
 			if (verify(SIGNATURE_or_MAC_2,<'Signature1',ID_CRED_R,TH_2,pkR,EAD_2,MAC_2>, pkR) = sigtrue) then(
 				// Construction of EAD_3
-				let measurement_hash = hash(~measurement) in
-				let signature = sign(<'Signature1',CRED_I, nonceR, measurement_hash>,'rep', ~ak) in
-				let EAD_3 = <CRED_I, nonceR, measurement_hash, signature> in
-				event AttestationGeneratedI(~cid, method_zero, pkI, pkR, nonceR, measurement_hash, signature, ~ak, ~X, G_YX);
+				let signature = sign(<'Signature1',CRED_I, nonceR>,'rep', ~ak) in
+				let EAD_3 = <CRED_I, nonceR, signature> in
+				event AttestationGeneratedI(~cid, method_two, pkI, pkR, nonceR, signature, ~ak, ~X, G_YX);
 
 				let TH_3 = hash(<wrap(TH_2), plaintext_2, pkR>) in
     	        event THIShared(pkI, TH_3); 		
@@ -317,10 +308,9 @@ let I(~cid, ~skI, ~I, ~ak, ~measurement, ID_CRED_R) =
 	    	    
 	    	if (SIGNATURE_or_MAC_2 = MAC_2) then (
 				// Construction of EAD_3
-				let measurement_hash = hash(~measurement) in
-				let signature = sign(<'Signature1',CRED_I, nonceR, measurement_hash>,'rep', ~ak) in
-				let EAD_3 = <CRED_I, nonceR, measurement_hash, signature> in
-				event AttestationGeneratedI(~cid, method_zero, pkI, pkR, nonceR, measurement_hash, signature, ~ak, ~X, G_YX);
+				let signature = sign(<'Signature1',CRED_I, nonceR>,'rep', ~ak) in
+				let EAD_3 = <CRED_I, nonceR, signature> in
+				event AttestationGeneratedI(~cid, method_three, pkI, pkR, nonceR, signature, ~ak, ~X, G_YX);
 
 				let TH_3 = hash(<wrap(TH_2), plaintext_2, pkR>) in
     	        event THIShared(pkI, TH_3); 		
@@ -386,7 +376,7 @@ let R(~cid, ~skR,~R) =
 		
 		new ~nonceR;
 		event HonestNonce(~nonceR);
-		let EAD_2 = <~nonceR> in
+		let EAD_2 = ~nonceR in
 	    let pkR = get_sig_cred(ID_CRED_R) in
 	    let PRK_3e2m = PRK_2e in
 	    let MAC_2 = edhoc_kdf(PRK_3e2m,'two', <ID_CRED_R, TH_2,  pkR, EAD_2>, hash_length) in   
@@ -420,19 +410,19 @@ let R(~cid, ~skR,~R) =
 			if (ID_CRED_R = check_cred(ID_CRED_I)) then ( // Not in the standard: we test if we did not receive our own cred
 		   		0
 			) else (  
-				let <CRED_I_in, nonceR_in, measurement_hash_in, signature> = EAD_3 in        
-				if (verify(signature, <'Signature1',CRED_I_in, nonceR_in, measurement_hash_in>, pk_attkey) = sigtrue) then (
-					event VerifiedSignatureR(~cid, method_zero, pkI, pkR, nonceR_in, measurement_hash_in, signature, ~Y, G_XY);
+				let <CRED_I_in, nonceR_in, signature_in> = EAD_3 in        
+				if (verify(signature_in, <'Signature1',CRED_I_in, nonceR_in>, pk_attkey) = sigtrue) then (
+					event VerifiedSignatureR(~cid, method_zero, pkI, pkR, nonceR_in, signature_in, ~Y, G_XY);
 					if (~nonceR = nonceR_in) then (
-						event VerifiedNonceR(~cid, method_zero, pkI, pkR, nonceR_in);
-						event AttestationAcceptedR(~cid, method_zero, pkI, pkR, signature, nonceR_in, measurement_hash_in, ~Y, G_XY, pk_attkey);
+						event VerifiedNonceR(~cid, method_zero, pkI, pkR, nonceR_in, signature_in);
+						event AttestationAcceptedR(~cid, method_zero, pkI, pkR, signature_in, nonceR_in, ~Y, G_XY, pk_attkey);
 						let PRK_out = edhoc_kdf(PRK_4e3m, 'seven', TH_4, hash_length) in
 						event AcceptR(~cid,method_zero,pkI,pkR,PRK_4e3m,PRK_out,~Y,G_X);
 						event AcceptRRA(~cid,method_zero,pkI,pkR,PRK_4e3m,PRK_out,~Y,G_X, G_XY);
 						event SecretsR(~cid,method_zero,pkI,pkR,PRK_2e,PRK_3e2m,PRK_4e3m,PRK_out,KEYSTREAM_2,K_3,IV_3,~Y,G_X);						    
 						event AcceptRData(PRK_out,method_zero,pkI,pkR,~Y,G_X,<TH_2,TH_3,TH_4,suitesI, EAD_1, EAD_2, EAD_3, m1, plaintext_2, plaintext_3>);
 						(
-							ContactJudgeFromR(ID_CRED_I,TH_3,pkI,EAD_3,MAC_3,SIGNATURE_or_MAC_3,)
+							ContactJudgeFromR(ID_CRED_I,TH_3,pkI,EAD_3,MAC_3,SIGNATURE_or_MAC_3)
 							|
 							leakSKey(PRK_out)
 						)
@@ -444,7 +434,7 @@ let R(~cid, ~skR,~R) =
 					event SecretsR(~cid,method_zero,pkI,pkR,PRK_2e,PRK_3e2m,PRK_4e3m,PRK_out,KEYSTREAM_2,K_3,IV_3,~Y,G_X);						    
 					event AcceptRData(PRK_out,method_zero,pkI,pkR,~Y,G_X,<TH_2,TH_3,TH_4,suitesI, EAD_1, EAD_2, EAD_3, m1, plaintext_2, plaintext_3>);
 					(
-						ContactJudgeFromR(ID_CRED_I,TH_3,pkI,EAD_3,MAC_3,SIGNATURE_or_MAC_3,)
+						ContactJudgeFromR(ID_CRED_I,TH_3,pkI,EAD_3,MAC_3,SIGNATURE_or_MAC_3)
 						|
 						leakSKey(PRK_out)
 					)
@@ -455,7 +445,7 @@ let R(~cid, ~skR,~R) =
 	if (method = method_one) then (
 		new ~nonceR;
 		event HonestNonce(~nonceR);
-		let EAD_2 = <~nonceR> in
+		let EAD_2 = ~nonceR in
 
 	   	let pkR = get_DH_cred(ID_CRED_R) in
 		let G_XR = G_X^~R in
@@ -480,6 +470,7 @@ let R(~cid, ~skR,~R) =
 	    let plaintext_3 = aeaddec(CIPHERTEXT_3,K_3,IV_3) in
 	    let <ID_CRED_I,SIGNATURE_or_MAC_3,EAD_3> = plaintext_3 in	    
 	    let pkI = get_sig_cred(ID_CRED_I) in
+		let pk_attkey = get_p_attkey(ID_CRED_I) in
 	    let TH_4 = hash(<wrap(TH_3), plaintext_3, pkI>) in	    	    
 	    let PRK_4e3m = PRK_3e2m in 
    	    let MAC_3 = edhoc_kdf(PRK_4e3m, 'six', <ID_CRED_I, TH_3, pkI,EAD_3>,hash_length) in	    
@@ -487,23 +478,44 @@ let R(~cid, ~skR,~R) =
 		if (verify(SIGNATURE_or_MAC_3,<'Signature2',ID_CRED_I,TH_3,pkI,EAD_3,MAC_3>, pkI) = sigtrue) then (
 			if (ID_CRED_R = check_cred(ID_CRED_I)) then ( // Not in the standard: we test if we did not receive our own cred
 		   		0
-			) else ( 
-  		    let PRK_out = edhoc_kdf(PRK_4e3m, 'seven', TH_4, hash_length) in
-            event AcceptR(~cid,method_one,pkI,pkR,PRK_4e3m,PRK_out,~Y,G_X);
-		    event SecretsR(~cid,method_one,pkI,pkR,PRK_2e,PRK_3e2m,PRK_4e3m,PRK_out,KEYSTREAM_2,K_3,IV_3,~Y,G_X);						    
-		    event AcceptRData(PRK_out,method_one,pkI,pkR,~Y,G_X,<TH_2,TH_3,TH_4,suitesI, EAD_1, EAD_2, EAD_3, m1, plaintext_2, plaintext_3>);
-		    (
-		    	ContactJudgeFromR(ID_CRED_I,TH_3,pkI,EAD_3,MAC_3,SIGNATURE_or_MAC_3,)
-		    	|	
- 		   		leakSKey(PRK_out)
-		    )
+			)
+			else (
+				let <CRED_I_in, nonceR_in, signature_in> = EAD_3 in        
+				if (verify(signature_in, <'Signature1',CRED_I_in, nonceR_in>, pk_attkey) = sigtrue) then (
+					event VerifiedSignatureR(~cid, method_one, pkI, pkR, nonceR_in, signature_in, ~Y, G_XY);
+					if (~nonceR = nonceR_in) then (
+						event VerifiedNonceR(~cid, method_one, pkI, pkR, nonceR_in, signature_in);
+						event AttestationAcceptedR(~cid, method_one, pkI, pkR, signature_in, nonceR_in, ~Y, G_XY, pk_attkey);
+						let PRK_out = edhoc_kdf(PRK_4e3m, 'seven', TH_4, hash_length) in
+						event AcceptR(~cid,method_one,pkI,pkR,PRK_4e3m,PRK_out,~Y,G_X);
+						event AcceptRRA(~cid,method_one,pkI,pkR,PRK_4e3m,PRK_out,~Y,G_X, G_XY);
+						event SecretsR(~cid,method_one,pkI,pkR,PRK_2e,PRK_3e2m,PRK_4e3m,PRK_out,KEYSTREAM_2,K_3,IV_3,~Y,G_X);						    
+						event AcceptRData(PRK_out,method_one,pkI,pkR,~Y,G_X,<TH_2,TH_3,TH_4,suitesI, EAD_1, EAD_2, EAD_3, m1, plaintext_2, plaintext_3>);
+						(
+							ContactJudgeFromR(ID_CRED_I,TH_3,pkI,EAD_3,MAC_3,SIGNATURE_or_MAC_3)
+							|
+							leakSKey(PRK_out)
+						)
+					)
+				)
+				else ( 
+				let PRK_out = edhoc_kdf(PRK_4e3m, 'seven', TH_4, hash_length) in
+				event AcceptR(~cid,method_one,pkI,pkR,PRK_4e3m,PRK_out,~Y,G_X);
+				event SecretsR(~cid,method_one,pkI,pkR,PRK_2e,PRK_3e2m,PRK_4e3m,PRK_out,KEYSTREAM_2,K_3,IV_3,~Y,G_X);						    
+				event AcceptRData(PRK_out,method_one,pkI,pkR,~Y,G_X,<TH_2,TH_3,TH_4,suitesI, EAD_1, EAD_2, EAD_3, m1, plaintext_2, plaintext_3>);
+				(
+					ContactJudgeFromR(ID_CRED_I,TH_3,pkI,EAD_3,MAC_3,SIGNATURE_or_MAC_3)
+					|	
+					leakSKey(PRK_out)
+				)
+				)
 			)
 		)
 	) else (
 	if (method = method_two) then (
 	   	new ~nonceR;
 		event HonestNonce(~nonceR);
-		let EAD_2 = <~nonceR> in
+		let EAD_2 = ~nonceR in
 
 	    let pkR = get_sig_cred(ID_CRED_R) in
 	    let PRK_3e2m = PRK_2e in
@@ -526,6 +538,7 @@ let R(~cid, ~skR,~R) =
 	    let plaintext_3 = aeaddec(CIPHERTEXT_3,K_3,IV_3) in
 	    let <ID_CRED_I,SIGNATURE_or_MAC_3,EAD_3> = plaintext_3 in	    
 	    let pkI = get_DH_cred(ID_CRED_I) in
+		let pk_attkey = get_p_attkey(ID_CRED_I) in
 	    let TH_4 = hash(<wrap(TH_3), plaintext_3, pkI>) in	    	    
 			
 		let pkIY = pkI^~Y in
@@ -537,23 +550,44 @@ let R(~cid, ~skR,~R) =
 	    if (SIGNATURE_or_MAC_3 = MAC_3) then (
 			if (ID_CRED_R = check_cred(ID_CRED_I)) then ( // Not in the standard: we test if we did not receive our own cred
 		   		0
-			) else (   
-  		    let PRK_out = edhoc_kdf(PRK_4e3m, 'seven', TH_4, hash_length) in
-            event AcceptR(~cid,method_two,pkI,pkR,PRK_4e3m,PRK_out,~Y,G_X);
-		    event SecretsR(~cid,method_two,pkI,pkR,PRK_2e,PRK_3e2m,PRK_4e3m,PRK_out,KEYSTREAM_2,K_3,IV_3,~Y,G_X);						    
-		    event AcceptRData(PRK_out,method_two,pkI,pkR,~Y,G_X,<TH_2,TH_3,TH_4,suitesI, EAD_1, EAD_2, EAD_3, m1, plaintext_2, plaintext_3>);
-		    (
-		    	ContactJudgeFromR(ID_CRED_I,TH_3,pkI,EAD_3,MAC_3,SIGNATURE_or_MAC_3,)
-		    	|
- 		   		leakSKey(PRK_out)
-		    )
+			) 
+			else (
+				let <CRED_I_in, nonceR_in, signature_in> = EAD_3 in        
+				if (verify(signature_in, <'Signature1',CRED_I_in, nonceR_in>, pk_attkey) = sigtrue) then (
+					event VerifiedSignatureR(~cid, method_two, pkI, pkR, nonceR_in, signature_in, ~Y, G_XY);
+					if (~nonceR = nonceR_in) then (
+						event VerifiedNonceR(~cid, method_two, pkI, pkR, nonceR_in, signature_in);
+						event AttestationAcceptedR(~cid, method_two, pkI, pkR, signature_in, nonceR_in, ~Y, G_XY, pk_attkey);
+						let PRK_out = edhoc_kdf(PRK_4e3m, 'seven', TH_4, hash_length) in
+						event AcceptR(~cid,method_two,pkI,pkR,PRK_4e3m,PRK_out,~Y,G_X);
+						event AcceptRRA(~cid,method_two,pkI,pkR,PRK_4e3m,PRK_out,~Y,G_X, G_XY);
+						event SecretsR(~cid,method_two,pkI,pkR,PRK_2e,PRK_3e2m,PRK_4e3m,PRK_out,KEYSTREAM_2,K_3,IV_3,~Y,G_X);						    
+						event AcceptRData(PRK_out,method_two,pkI,pkR,~Y,G_X,<TH_2,TH_3,TH_4,suitesI, EAD_1, EAD_2, EAD_3, m1, plaintext_2, plaintext_3>);
+						(
+							ContactJudgeFromR(ID_CRED_I,TH_3,pkI,EAD_3,MAC_3,SIGNATURE_or_MAC_3)
+							|
+							leakSKey(PRK_out)
+						)
+					)
+				)			
+				else (   
+				let PRK_out = edhoc_kdf(PRK_4e3m, 'seven', TH_4, hash_length) in
+				event AcceptR(~cid,method_two,pkI,pkR,PRK_4e3m,PRK_out,~Y,G_X);
+				event SecretsR(~cid,method_two,pkI,pkR,PRK_2e,PRK_3e2m,PRK_4e3m,PRK_out,KEYSTREAM_2,K_3,IV_3,~Y,G_X);						    
+				event AcceptRData(PRK_out,method_two,pkI,pkR,~Y,G_X,<TH_2,TH_3,TH_4,suitesI, EAD_1, EAD_2, EAD_3, m1, plaintext_2, plaintext_3>);
+				(
+					ContactJudgeFromR(ID_CRED_I,TH_3,pkI,EAD_3,MAC_3,SIGNATURE_or_MAC_3)
+					|
+					leakSKey(PRK_out)
+				)
+				)
 			)
 		)
 	) else (
 	if (method = method_three) then (
    	   	new ~nonceR;
 		event HonestNonce(~nonceR);
-		let EAD_2 = <~nonceR> in
+		let EAD_2 = ~nonceR in
 
 	    let pkR = get_DH_cred(ID_CRED_R) in
 	    let G_XR = G_X^~R in
@@ -580,6 +614,7 @@ let R(~cid, ~skR,~R) =
 	    let plaintext_3 = aeaddec(CIPHERTEXT_3,K_3,IV_3) in
 	    let <ID_CRED_I,SIGNATURE_or_MAC_3,EAD_3> = plaintext_3 in	    
 	    let pkI = get_DH_cred(ID_CRED_I) in
+		let pk_attkey = get_p_attkey(ID_CRED_I) in
 	    let TH_4 = hash(<wrap(TH_3), plaintext_3, pkI>) in	    	    
    	    
         let pkIY = pkI^~Y in
@@ -591,16 +626,37 @@ let R(~cid, ~skR,~R) =
 	    if (SIGNATURE_or_MAC_3 = MAC_3) then (
 			if (ID_CRED_R = check_cred(ID_CRED_I)) then ( // Not in the standard: we test if we did not receive our own cred
 		   		0
-			) else (
-  		    let PRK_out = edhoc_kdf(PRK_4e3m, 'seven', TH_4, hash_length) in
-            event AcceptR(~cid,method_three,pkI,pkR,PRK_4e3m,PRK_out,~Y,G_X);
-		    event SecretsR(~cid,method_three,pkI,pkR,PRK_2e,PRK_3e2m,PRK_4e3m,PRK_out,KEYSTREAM_2,K_3,IV_3,~Y,G_X);						    
-		    event AcceptRData(PRK_out,method_three,pkI,pkR,~Y,G_X,<TH_2,TH_3,TH_4,suitesI, EAD_1, EAD_2, EAD_3, m1, plaintext_2, plaintext_3>);
-		    (
-		    	ContactJudgeFromR(ID_CRED_I,TH_3,pkI,EAD_3,MAC_3,SIGNATURE_or_MAC_3,)
-		    	|
- 		   		leakSKey(PRK_out)
-		    )
+			) 
+			else (
+				let <CRED_I_in, nonceR_in, signature_in> = EAD_3 in        
+				if (verify(signature_in, <'Signature1',CRED_I_in, nonceR_in>, pk_attkey) = sigtrue) then (
+					event VerifiedSignatureR(~cid, method_three, pkI, pkR, nonceR_in, signature_in, ~Y, G_XY);
+					if (~nonceR = nonceR_in) then (
+						event VerifiedNonceR(~cid, method_three, pkI, pkR, nonceR_in, signature_in);
+						event AttestationAcceptedR(~cid, method_three, pkI, pkR, signature_in, nonceR_in, ~Y, G_XY, pk_attkey);
+						let PRK_out = edhoc_kdf(PRK_4e3m, 'seven', TH_4, hash_length) in
+						event AcceptR(~cid,method_three,pkI,pkR,PRK_4e3m,PRK_out,~Y,G_X);
+						event AcceptRRA(~cid,method_three,pkI,pkR,PRK_4e3m,PRK_out,~Y,G_X, G_XY);
+						event SecretsR(~cid,method_three,pkI,pkR,PRK_2e,PRK_3e2m,PRK_4e3m,PRK_out,KEYSTREAM_2,K_3,IV_3,~Y,G_X);						    
+						event AcceptRData(PRK_out,method_three,pkI,pkR,~Y,G_X,<TH_2,TH_3,TH_4,suitesI, EAD_1, EAD_2, EAD_3, m1, plaintext_2, plaintext_3>);
+						(
+							ContactJudgeFromR(ID_CRED_I,TH_3,pkI,EAD_3,MAC_3,SIGNATURE_or_MAC_3)
+							|
+							leakSKey(PRK_out)
+						)
+					)
+				)
+				else (
+				let PRK_out = edhoc_kdf(PRK_4e3m, 'seven', TH_4, hash_length) in
+				event AcceptR(~cid,method_three,pkI,pkR,PRK_4e3m,PRK_out,~Y,G_X);
+				event SecretsR(~cid,method_three,pkI,pkR,PRK_2e,PRK_3e2m,PRK_4e3m,PRK_out,KEYSTREAM_2,K_3,IV_3,~Y,G_X);						    
+				event AcceptRData(PRK_out,method_three,pkI,pkR,~Y,G_X,<TH_2,TH_3,TH_4,suitesI, EAD_1, EAD_2, EAD_3, m1, plaintext_2, plaintext_3>);
+				(
+					ContactJudgeFromR(ID_CRED_I,TH_3,pkI,EAD_3,MAC_3,SIGNATURE_or_MAC_3)
+					|
+					leakSKey(PRK_out)
+				)
+				)
 			)
   		)
 	)
@@ -623,13 +679,13 @@ process:
 |
 (!JudgeI)
 |
-!(new ~sk; new ~ltdh; new ~computerId; new ~ak; new ~meas;
+!(new ~sk; new ~ltdh; new ~computerId; new ~ak; 
     let idd = id(pk(~sk), 'g'^~ltdh, pk(~ak) ) in 
     out(<idd, pk(~sk), 'g'^~ltdh, pk(~ak) >);
     event ShareLT(~ltdh);
       event Honest(pk(~sk));
       event Honest( 'g'^~ltdh );   
-( (! in(cred); I(~computerId,~sk, ~ltdh, ~ak, ~meas, cred)) | (!R(~computerId,~sk,~ltdh)) | compromise(~sk) | compromiseDH(~ltdh) | LeakAttKey(~ak) ) )
+( (! in(cred); I(~computerId,~sk, ~ltdh, ~ak, cred)) | (!R(~computerId,~sk,~ltdh)) | compromise(~sk) | compromiseDH(~ltdh) | LeakAttKey(~ak) ) )
 
 
 
@@ -643,7 +699,7 @@ process:
 // ************** Anonimity  ***********************************
 // *************************************************************
 
-#ifdef diffEquiv
+// #ifdef diffEquiv
 
 /* 
 
@@ -651,20 +707,20 @@ process:
 */
 
 
-diffEquivLemma: // Anonymity as a diff equivalence
-!(  new ~sk1; new ~ltdh1; new ~computerId1;
-    let idd1 = id(pk(~sk1),  'g'^~ltdh1 ) in 
-    out(<idd1, pk(~sk1)>);
-    new ~sk2; new ~ltdh2; new ~computerId2;
-    let idd2=id(pk(~sk2),  'g'^~ltdh2 ) in
-    out(<idd2,pk(~sk2)>);
-    (
-     (! in(cred);I(~computerId1,~sk1,~ltdh1,cred)) | (! in(cred);I(~computerId2,~sk2,~ltdh2,cred)) |
-     (!R(~computerId1,~sk1,~ltdh1)) | (!R(~computerId2,~sk2,~ltdh2)) |
-     (! I(diff(~computerId1,~computerId2),diff(~sk1,~sk2),diff(~ltdh1,~ltdh2),idd1) ) | // test sessions with sk1 as responder
-     compromise(~sk2) // sk1 must not be compromised as it is the responder
-    )
-)
+// diffEquivLemma: // Anonymity as a diff equivalence
+// !(  new ~sk1; new ~ltdh1; new ~computerId1;
+//     let idd1 = id(pk(~sk1),  'g'^~ltdh1 ) in 
+//     out(<idd1, pk(~sk1)>);
+//     new ~sk2; new ~ltdh2; new ~computerId2;
+//     let idd2=id(pk(~sk2),  'g'^~ltdh2 ) in
+//     out(<idd2,pk(~sk2)>);
+//     (
+//      (! in(cred);I(~computerId1,~sk1,~ltdh1,cred)) | (! in(cred);I(~computerId2,~sk2,~ltdh2,cred)) |
+//      (!R(~computerId1,~sk1,~ltdh1)) | (!R(~computerId2,~sk2,~ltdh2)) |
+//      (! I(diff(~computerId1,~computerId2),diff(~sk1,~sk2),diff(~ltdh1,~ltdh2),idd1) ) | // test sessions with sk1 as responder
+//      compromise(~sk2) // sk1 must not be compromised as it is the responder
+//     )
+// )
 
 /*
 diffEquivLemma: // Anonymity as a diff equivalence for only 2 sessions
@@ -682,77 +738,77 @@ diffEquivLemma: // Anonymity as a diff equivalence for only 2 sessions
     )
 */
 
-#endif
+// #endif
 
-#ifdef EquivLemmas
+// #ifdef EquivLemmas
 
-equivLemma: // Anonymity
-(
-    new ~sk1; new ~ltdh1; new ~computerId1;
-    let idd1 = id(pk(~sk1),  'g'^~ltdh1 ) in 
-    out(<idd1, pk(~sk1)>);
-    new ~sk2; new ~ltdh2;
-    new ~computerId2;
-    let idd2=id(pk(~sk2),  'g'^~ltdh2 ) in
-    out(<idd2,pk(~sk2)>);
-    (
-       I(~computerId1,~sk1,~ltdh1,idd1)
-     | R(~computerId1,~sk1,~ltdh1)
-     | compromise(~sk2)
-    )
-)
+// equivLemma: // Anonymity
+// (
+//     new ~sk1; new ~ltdh1; new ~computerId1;
+//     let idd1 = id(pk(~sk1),  'g'^~ltdh1 ) in 
+//     out(<idd1, pk(~sk1)>);
+//     new ~sk2; new ~ltdh2;
+//     new ~computerId2;
+//     let idd2=id(pk(~sk2),  'g'^~ltdh2 ) in
+//     out(<idd2,pk(~sk2)>);
+//     (
+//        I(~computerId1,~sk1,~ltdh1,idd1)
+//      | R(~computerId1,~sk1,~ltdh1)
+//      | compromise(~sk2)
+//     )
+// )
 
-(
-    new ~sk1; new ~ltdh1; new ~computerId1;
-    let idd1 = id(pk(~sk1),  'g'^~ltdh1 ) in 
-    out(<idd1, pk(~sk1)>);
-    new ~sk2; new ~ltdh2;
-    new ~computerId2;
-    let idd2=id(pk(~sk2),  'g'^~ltdh2 ) in
-    out(<idd2,pk(~sk2)>);
-    (
-       I(~computerId2,~sk2,~ltdh2,idd1)
-     | R(~computerId1,~sk1,~ltdh1)
-     | compromise(~sk2)
-    )
-)
+// (
+//     new ~sk1; new ~ltdh1; new ~computerId1;
+//     let idd1 = id(pk(~sk1),  'g'^~ltdh1 ) in 
+//     out(<idd1, pk(~sk1)>);
+//     new ~sk2; new ~ltdh2;
+//     new ~computerId2;
+//     let idd2=id(pk(~sk2),  'g'^~ltdh2 ) in
+//     out(<idd2,pk(~sk2)>);
+//     (
+//        I(~computerId2,~sk2,~ltdh2,idd1)
+//      | R(~computerId1,~sk1,~ltdh1)
+//      | compromise(~sk2)
+//     )
+// )
 
 
 
-equivLemma: // Unlinkability
-(
-    new ~sk1; new ~ltdh1; new ~computerId1;
-    let idd1 = id(pk(~sk1),  'g'^~ltdh1 ) in 
-    out(<idd1, pk(~sk1)>);
-    new ~sk2; new ~ltdh2;
-    new ~computerId2;
-    let idd2=id(pk(~sk2),  'g'^~ltdh2 ) in
-    out(<idd2,pk(~sk2)>);
-    (
-       I(~computerId1,~sk1,~ltdh1,idd2)
-     | I(~computerId1,~sk1,~ltdh1,idd2)
-     | R(~computerId2,~sk2,~ltdh2)
-     | R(~computerId2,~sk2,~ltdh2)
-    )
-)
+// equivLemma: // Unlinkability
+// (
+//     new ~sk1; new ~ltdh1; new ~computerId1;
+//     let idd1 = id(pk(~sk1),  'g'^~ltdh1 ) in 
+//     out(<idd1, pk(~sk1)>);
+//     new ~sk2; new ~ltdh2;
+//     new ~computerId2;
+//     let idd2=id(pk(~sk2),  'g'^~ltdh2 ) in
+//     out(<idd2,pk(~sk2)>);
+//     (
+//        I(~computerId1,~sk1,~ltdh1,idd2)
+//      | I(~computerId1,~sk1,~ltdh1,idd2)
+//      | R(~computerId2,~sk2,~ltdh2)
+//      | R(~computerId2,~sk2,~ltdh2)
+//     )
+// )
 
-(
-    new ~sk1; new ~ltdh1; new ~computerId1;
-    let idd1 = id(pk(~sk1),  'g'^~ltdh1 ) in 
-    out(<idd1, pk(~sk1)>);
-    new ~sk2; new ~ltdh2;
-    new ~computerId2;
-    let idd2=id(pk(~sk2),  'g'^~ltdh2 ) in
-    out(att,<idd2,pk(~sk2)>);
-    (
-       I(~computerId1,~sk1,~ltdh1,idd2)
-     | I(~computerId2,~sk2,~ltdh2,idd2)
-     | R(~computerId2,~sk2,~ltdh2)
-     | R(~computerId2,~sk2,~ltdh2)
-    )
-)
+// (
+//     new ~sk1; new ~ltdh1; new ~computerId1;
+//     let idd1 = id(pk(~sk1),  'g'^~ltdh1 ) in 
+//     out(<idd1, pk(~sk1)>);
+//     new ~sk2; new ~ltdh2;
+//     new ~computerId2;
+//     let idd2=id(pk(~sk2),  'g'^~ltdh2 ) in
+//     out(att,<idd2,pk(~sk2)>);
+//     (
+//        I(~computerId1,~sk1,~ltdh1,idd2)
+//      | I(~computerId2,~sk2,~ltdh2,idd2)
+//      | R(~computerId2,~sk2,~ltdh2)
+//      | R(~computerId2,~sk2,~ltdh2)
+//     )
+// )
 
-#endif 
+// #endif 
 
 
 
