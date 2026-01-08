@@ -378,20 +378,39 @@ This crucially requires that even with a man in the middle, or with a non truste
 //   "
 
 // Agreement of parameters for attestation and authentication
-// TODO
+lemma AgreementParamaters:
+  "All cidI cidR method pkI pkR gxy y nonce sig ak pk_attkey #i #j #k.
+     FinishR(cidR, method, pkI, pkR, gxy, y, nonce, sig, pk_attkey)@i
+     &
+     Honest(pkI)@j
+     &
+     Honest(pkR)@k
+   ==>
+   (Ex cidI ak x #t. SentByI(cidI, method, pkI, pkR, gxy, x, nonce, sig, ak, pk_attkey)@t & t < i )
+    |
+    (Ex pkR #t. Compromise(pkR)@t & t < i)
+    |
+    (Ex pkI #t. Compromise(pkI)@t & t < i)
+    |
+    (Ex ak #t. Compromise(ak)@t & t < i)
+    "   
 
 
-lemma ChannelBinding:
-"All cid m pkI pkR gx y1 y2 prk prk4 gxy1 gxy2 pk_attkey sig nonce ak #i #j #l #k #u #c.
-    AttestationAcceptedR(cid,m, pkI, pkR, sig, nonce, y1, gxy1, pk_attkey)@i 
-    &
-    AcceptRRA(cid, m, pkI, pkR, prk4, prk, y2, gx, gxy2)@j
-  ==>
-    (Ex cidI prk3 gy x ak #t. AcceptIRA(cid, m, pkI, pkR, prk3, prk4, prk, x, gy, gxy2, ak)@t
-    & t < j
-    & gxy1 = gxy2)
-    |
-    (Ex #t. Compromise(pkI)@t )
-    |
-    (Ex #t. Compromise(pkR)@t )
-  "
+// lemma ChannelBinding:
+// "All cidI cidR pkI pkR nonce sig gxy gxyI th3I th3R #i #j #k.
+//     AttestationAcceptedR(cidR, pkI, pkR, nonce, sig, gxy, th3R)@i 
+//   ==>
+//     (Ex cidI ak x gxyI #t. SentbyI(cidI, pkI, pkR, nonce, sig, gxyI, th3I)@t
+//     & 
+//     th3I = th3R
+//     &
+//     gxy = gxyI
+//     &
+//     t < i)
+//     |
+//     // (Ex pkI #t. Compromise(pkI)@t  )
+//     (Ex pkI pkR #t #l. Compromise(pkI)@t 
+//     & Compromise(pkR)@l )
+//     // |
+//     // (Ex pkR #t. Compromise(pkR)@t )
+//   "
