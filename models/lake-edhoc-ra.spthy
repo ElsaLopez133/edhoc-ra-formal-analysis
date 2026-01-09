@@ -70,7 +70,7 @@ equations: get_DH_cred(id(x,y,z))=y,
 
 
 // new adding for test
-#define MethodThree
+#define MethodZero
 
 #include "Headers.splib"
 
@@ -194,6 +194,7 @@ let I(~cid, ~skI, ~I, ~ak, ID_CRED_R) =
 				let IV_3 = edhoc_kdf(PRK_3e2m,'four',TH_3, iv_length) in
 				let plaintext_3 = <ID_CRED_I, SIGNATURE_or_MAC_3,EAD_3> in
 				let m3 = aeadenc(plaintext_3,'rep',K_3,IV_3) in
+				event SentByI(~cid, method_zero, pkI, pkR, G_YX, ~X, nonceR, signature, ~ak, pk(~ak));
 				let TH_4 = hash(<wrap(TH_3), plaintext_3, pkI>) in
 				let PRK_out = edhoc_kdf(PRK_4e3m, 'seven', TH_4, hash_length) in
 				event AcceptI(~cid,method_zero,pkI,pkR,PRK_3e2m,PRK_4e3m,PRK_out,~X,G_Y);
@@ -237,6 +238,7 @@ let I(~cid, ~skI, ~I, ~ak, ID_CRED_R) =
 				let IV_3 = edhoc_kdf(PRK_3e2m,'four',TH_3, iv_length) in
 				let plaintext_3 = <ID_CRED_I, SIGNATURE_or_MAC_3,EAD_3> in
 				let m3 = aeadenc(plaintext_3,'rep',K_3,IV_3) in
+				event SentByI(~cid, method_one, pkI, pkR, G_YX, ~X, nonceR, signature, ~ak, pk(~ak));
 				let TH_4 = hash(<wrap(TH_3),  plaintext_3, pkI>) in
 				let PRK_out = edhoc_kdf(PRK_4e3m, 'seven', TH_4, hash_length) in
 				event AcceptI(~cid,method_one,pkI,pkR,PRK_3e2m,PRK_4e3m,PRK_out,~X,G_Y);
@@ -280,6 +282,7 @@ let I(~cid, ~skI, ~I, ~ak, ID_CRED_R) =
 				let IV_3 = edhoc_kdf(PRK_3e2m,'four',TH_3, iv_length) in
 				let plaintext_3 = <ID_CRED_I, SIGNATURE_or_MAC_3,EAD_3> in
 				let m3 = aeadenc(plaintext_3,'rep',K_3,IV_3) in
+				event SentByI(~cid, method_two, pkI, pkR, G_YX, ~X, nonceR, signature, ~ak, pk(~ak));
 				let TH_4 = hash(<wrap(TH_3),  plaintext_3, pkI>) in
 				let PRK_out = edhoc_kdf(PRK_4e3m, 'seven', TH_4, hash_length) in
 				event AcceptI(~cid,method_two,pkI,pkR,PRK_3e2m,PRK_4e3m,PRK_out,~X,G_Y);
@@ -417,13 +420,14 @@ let R(~cid, ~skR,~R) =
 				if (verify(signature_in, <'Signature1',ID_CRED_I_in, nonceR_in>, pk_attkey) = sigtrue) then (
 					event VerifiedSignatureR(~cid, pkI, pkR, nonceR_in, signature_in, ~Y, G_XY);
 					if (~nonceR = nonceR_in) then (
-						event VerifiedNonceR(~cid, method_zero, pkI, pkR, nonceR_in, signature_in);
+						event VerifiedNonceR(~cid, method_zero, pkI, pkR, signature_in, nonceR_in, ~Y, G_XY, pk_attkey);
 						event AttestationAcceptedR(~cid, pkI, pkR, nonceR_in, signature_in, G_XY, TH_3);
 						let PRK_out = edhoc_kdf(PRK_4e3m, 'seven', TH_4, hash_length) in
 						event AcceptR(~cid,method_zero,pkI,pkR,PRK_4e3m,PRK_out,~Y,G_X);
 						event AcceptRRA(~cid,method_zero,pkI,pkR,PRK_4e3m,PRK_out,~Y,G_X, G_XY);
 						event SecretsR(~cid,method_zero,pkI,pkR,PRK_2e,PRK_3e2m,PRK_4e3m,PRK_out,KEYSTREAM_2,K_3,IV_3,~Y,G_X);						    
 						event AcceptRData(PRK_out,method_zero,pkI,pkR,~Y,G_X,<TH_2,TH_3,TH_4,suitesI, EAD_1, EAD_2, EAD_3, m1, plaintext_2, plaintext_3>);
+						event FinishR(~cid, method_zero, pkI, pkR, G_XY, ~Y, nonceR_in, signature_in, pk_attkey);
 						(
 							ContactJudgeFromR(ID_CRED_I,TH_3,pkI,EAD_3,MAC_3,SIGNATURE_or_MAC_3)
 							|
@@ -487,13 +491,14 @@ let R(~cid, ~skR,~R) =
 				if (verify(signature_in, <'Signature1',ID_CRED_I_in, nonceR_in>, pk_attkey) = sigtrue) then (
 					event VerifiedSignatureR(~cid, pkI, pkR, nonceR_in, signature_in, ~Y, G_XY);
 					if (~nonceR = nonceR_in) then (
-						event VerifiedNonceR(~cid, method_one, pkI, pkR, nonceR_in, signature_in);
+						event VerifiedNonceR(~cid, method_one, pkI, pkR, signature_in, nonceR_in, ~Y, G_XY, pk_attkey);
 						event AttestationAcceptedR(~cid, pkI, pkR, nonceR_in, signature_in, G_XY, TH_3);
 						let PRK_out = edhoc_kdf(PRK_4e3m, 'seven', TH_4, hash_length) in
 						event AcceptR(~cid,method_one,pkI,pkR,PRK_4e3m,PRK_out,~Y,G_X);
 						event AcceptRRA(~cid,method_one,pkI,pkR,PRK_4e3m,PRK_out,~Y,G_X, G_XY);
 						event SecretsR(~cid,method_one,pkI,pkR,PRK_2e,PRK_3e2m,PRK_4e3m,PRK_out,KEYSTREAM_2,K_3,IV_3,~Y,G_X);						    
 						event AcceptRData(PRK_out,method_one,pkI,pkR,~Y,G_X,<TH_2,TH_3,TH_4,suitesI, EAD_1, EAD_2, EAD_3, m1, plaintext_2, plaintext_3>);
+						event FinishR(~cid, method_one, pkI, pkR, G_XY, ~Y, nonceR_in, signature_in, pk_attkey);
 						(
 							ContactJudgeFromR(ID_CRED_I,TH_3,pkI,EAD_3,MAC_3,SIGNATURE_or_MAC_3)
 							|
@@ -559,13 +564,14 @@ let R(~cid, ~skR,~R) =
 				if (verify(signature_in, <'Signature1',ID_CRED_I_in, nonceR_in>, pk_attkey) = sigtrue) then (
 					event VerifiedSignatureR(~cid, pkI, pkR, nonceR_in, signature_in, ~Y, G_XY);
 					if (~nonceR = nonceR_in) then (
-						event VerifiedNonceR(~cid, method_two, pkI, pkR, nonceR_in, signature_in);
+						event VerifiedNonceR(~cid, method_two, pkI, pkR, signature_in, nonceR_in, ~Y, G_XY, pk_attkey);
 						event AttestationAcceptedR(~cid, pkI, pkR, nonceR_in, signature_in,G_XY, TH_3);
 						let PRK_out = edhoc_kdf(PRK_4e3m, 'seven', TH_4, hash_length) in
 						event AcceptR(~cid,method_two,pkI,pkR,PRK_4e3m,PRK_out,~Y,G_X);
 						event AcceptRRA(~cid,method_two,pkI,pkR,PRK_4e3m,PRK_out,~Y,G_X, G_XY);
 						event SecretsR(~cid,method_two,pkI,pkR,PRK_2e,PRK_3e2m,PRK_4e3m,PRK_out,KEYSTREAM_2,K_3,IV_3,~Y,G_X);						    
 						event AcceptRData(PRK_out,method_two,pkI,pkR,~Y,G_X,<TH_2,TH_3,TH_4,suitesI, EAD_1, EAD_2, EAD_3, m1, plaintext_2, plaintext_3>);
+						event FinishR(~cid, method_two, pkI, pkR, G_XY, ~Y, nonceR_in, signature_in, pk_attkey);
 						(
 							ContactJudgeFromR(ID_CRED_I,TH_3,pkI,EAD_3,MAC_3,SIGNATURE_or_MAC_3)
 							|
@@ -635,7 +641,7 @@ let R(~cid, ~skR,~R) =
 				if (verify(signature_in, <'Signature1',ID_CRED_I_in, nonceR_in>, pk_attkey) = sigtrue) then (
 					event VerifiedSignatureR(~cid, pkI, pkR, nonceR_in, signature_in, ~Y, G_XY);
 					if (~nonceR = nonceR_in) then (
-						event VerifiedNonceR(~cid, method_three, pkI, pkR, nonceR_in, signature_in);
+						event VerifiedNonceR(~cid, method_three, pkI, pkR, signature_in, nonceR_in, ~Y, G_XY, pk_attkey);
 						event AttestationAcceptedR(~cid, pkI, pkR, nonceR_in, signature_in, G_XY, TH_3);
 						let PRK_out = edhoc_kdf(PRK_4e3m, 'seven', TH_4, hash_length) in
 						event AcceptR(~cid,method_three,pkI,pkR,PRK_4e3m,PRK_out,~Y,G_X);

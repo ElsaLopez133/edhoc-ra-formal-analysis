@@ -73,7 +73,7 @@ event eShare(bitstring).
 event eShareLT(bitstring).
 event eTHIShared(bitstring,bitstring).
 event eTHRShared(bitstring,bitstring).
-event eVerifiedNonceR(bitstring,bitstring,bitstring,bitstring,bitstring,bitstring,bitstring,bitstring,bitstring).
+event eVerifiedNonceR(bitstring,bitstring,bitstring,bitstring,bitstring,bitstring).
 event eVerifiedSignatureR(bitstring,bitstring,bitstring,bitstring,bitstring,bitstring,bitstring).
 equation forall a:bitstring,b:bitstring; exp( exp(g,a),b) = exp(exp(g,b),a).
 equation forall x_1:bitstring, x_2:bitstring;   fst((x_1, x_2)) = x_1.
@@ -92,22 +92,20 @@ set simplifyProcess = false.
 set reconstructTrace = false.
 
 (* can be used to restrict methods *)
-restriction m:bitstring; event(eMethodOk(m)) ==> m=method_three.
+restriction m:bitstring; event(eMethodOk(m)) ==> m=method_two.
 
-(*AttestationEvidenceFreshness*)
-query cid1:bitstring, cid2:bitstring, gxy1:bitstring, gxy2:bitstring,
-      m:bitstring, nonce:bitstring, pkI1:bitstring, pkI2:bitstring,
-      pkR1:bitstring, pkR2:bitstring, pk_attkey1:bitstring,
-      pk_attkey2:bitstring, sig1:bitstring, sig2:bitstring, y1:bitstring,
-      y2:bitstring, i:time, j:time, k:time;
- (((event(eVerifiedNonceR( cid1, m, pkI1, pkR1, sig1, nonce, y1, gxy1,
-                           pk_attkey1
-          ))@i) &&
-   (event(eVerifiedNonceR( cid2, m, pkI2, pkR2, sig2, nonce, y2, gxy2,
-                           pk_attkey2
-          ))@j)) &&
-  (event(eHonestNonce( nonce ))@k)) ==>
- ((i = j) && (k < i))
+(*AttestationEvidenceIntegrity*)
+query ak:bitstring, cidI:bitstring, cidR:bitstring, gxy:bitstring,
+      nonce:bitstring, pkI:bitstring, pkR:bitstring, sig:bitstring,
+      x:bitstring, y:bitstring, i:time, j:time, t:time;
+ ((event(eVerifiedSignatureR( cidR, pkI, pkR, nonce, sig, y, gxy ))@i) &&
+  (event(eHonest( pkI ))@j)) ==>
+ (((((event(eAttestationGeneratedI( cidI, pkI, pkR, nonce, sig, ak, x, gxy
+            ))@t) &&
+     (t < i)) ||
+    (event(eLeakAttKey( ak ))@t)) ||
+   (event(eCompromise( pkI ))@t)) ||
+  (event(eCompromise( pkR ))@t))
 .
 let MakeDEO()=
     0.
@@ -415,8 +413,8 @@ let R(cid_2:bitstring, skR_2:bitstring, R_2:bitstring)=
                                                      signature_in_5, Y_2, G_XY_2
                                 );
                           if nonceR_5 = nonceR_in_5 then
-                              (event eVerifiedNonceR( cid_2, method_zero, pkI_5, pkR_5, signature_in_5,
-                                                      nonceR_in_5, Y_2, G_XY_2, pk_attkey_5
+                              (event eVerifiedNonceR( cid_2, method_zero, pkI_5, pkR_5, nonceR_in_5,
+                                                      signature_in_5
                                      );
                                event eAttestationAcceptedR( cid_2, pkI_5, pkR_5, nonceR_in_5,
                                                             signature_in_5, G_XY_2, TH_3_5
@@ -510,8 +508,8 @@ let R(cid_2:bitstring, skR_2:bitstring, R_2:bitstring)=
                                                           signature_in_6, Y_2, G_XY_2
                                      );
                                if nonceR_6 = nonceR_in_6 then
-                                   (event eVerifiedNonceR( cid_2, method_one, pkI_6, pkR_6, signature_in_6,
-                                                           nonceR_in_6, Y_2, G_XY_2, pk_attkey_6
+                                   (event eVerifiedNonceR( cid_2, method_one, pkI_6, pkR_6, nonceR_in_6,
+                                                           signature_in_6
                                           );
                                     event eAttestationAcceptedR( cid_2, pkI_6, pkR_6, nonceR_in_6,
                                                                  signature_in_6, G_XY_2, TH_3_6
@@ -606,9 +604,8 @@ let R(cid_2:bitstring, skR_2:bitstring, R_2:bitstring)=
                                                                signature_in_7, Y_2, G_XY_2
                                           );
                                     if nonceR_7 = nonceR_in_7 then
-                                        (event eVerifiedNonceR( cid_2, method_two, pkI_7, pkR_7,
-                                                                signature_in_7, nonceR_in_7, Y_2, G_XY_2,
-                                                                pk_attkey_7
+                                        (event eVerifiedNonceR( cid_2, method_two, pkI_7, pkR_7, nonceR_in_7,
+                                                                signature_in_7
                                                );
                                          event eAttestationAcceptedR( cid_2, pkI_7, pkR_7, nonceR_in_7,
                                                                       signature_in_7, G_XY_2, TH_3_7
@@ -706,8 +703,7 @@ let R(cid_2:bitstring, skR_2:bitstring, R_2:bitstring)=
                                                );
                                          if nonceR_8 = nonceR_in_8 then
                                              (event eVerifiedNonceR( cid_2, method_three, pkI_8, pkR_8,
-                                                                     signature_in_8, nonceR_in_8, Y_2, G_XY_2,
-                                                                     pk_attkey_8
+                                                                     nonceR_in_8, signature_in_8
                                                     );
                                               event eAttestationAcceptedR( cid_2, pkI_8, pkR_8, nonceR_in_8,
                                                                            signature_in_8, G_XY_2, TH_3_8
@@ -798,22 +794,34 @@ WARNING: the following wellformedness checks failed!
 Inexistant lemma actions
 ========================
 
-  lemma `AttestationEvidenceFreshness' references action 
-    fact "HonestNonce" (arity 1, Linear) 
+  lemma `AttestationEvidenceIntegrity' references action 
+    fact "AttestationGeneratedI" (arity 8, Linear) 
   but no rule has such an action.
   
-  lemma `AttestationEvidenceFreshness' references action 
-    fact "VerifiedNonceR" (arity 9, Linear) 
+  lemma `AttestationEvidenceIntegrity' references action 
+    fact "Compromise" (arity 1, Linear) 
   but no rule has such an action.
   
-  lemma `AttestationEvidenceFreshness' references action 
-    fact "VerifiedNonceR" (arity 9, Linear) 
+  lemma `AttestationEvidenceIntegrity' references action 
+    fact "Compromise" (arity 1, Linear) 
+  but no rule has such an action.
+  
+  lemma `AttestationEvidenceIntegrity' references action 
+    fact "Honest" (arity 1, Linear) 
+  but no rule has such an action.
+  
+  lemma `AttestationEvidenceIntegrity' references action 
+    fact "LeakAttKey" (arity 1, Linear) 
+  but no rule has such an action.
+  
+  lemma `AttestationEvidenceIntegrity' references action 
+    fact "VerifiedSignatureR" (arity 7, Linear) 
   but no rule has such an action.
 
 Restriction actions
 ===================
 
-  restriction `method_three' references action 
+  restriction `method_two' references action 
     fact "MethodOk" (arity 1, Linear) 
   but no rule has such an action.
 *)
@@ -832,22 +840,34 @@ WARNING: the following wellformedness checks failed!
 Inexistant lemma actions
 ========================
 
-  lemma `AttestationEvidenceFreshness' references action 
-    fact "HonestNonce" (arity 1, Linear) 
+  lemma `AttestationEvidenceIntegrity' references action 
+    fact "AttestationGeneratedI" (arity 8, Linear) 
   but no rule has such an action.
   
-  lemma `AttestationEvidenceFreshness' references action 
-    fact "VerifiedNonceR" (arity 9, Linear) 
+  lemma `AttestationEvidenceIntegrity' references action 
+    fact "Compromise" (arity 1, Linear) 
   but no rule has such an action.
   
-  lemma `AttestationEvidenceFreshness' references action 
-    fact "VerifiedNonceR" (arity 9, Linear) 
+  lemma `AttestationEvidenceIntegrity' references action 
+    fact "Compromise" (arity 1, Linear) 
+  but no rule has such an action.
+  
+  lemma `AttestationEvidenceIntegrity' references action 
+    fact "Honest" (arity 1, Linear) 
+  but no rule has such an action.
+  
+  lemma `AttestationEvidenceIntegrity' references action 
+    fact "LeakAttKey" (arity 1, Linear) 
+  but no rule has such an action.
+  
+  lemma `AttestationEvidenceIntegrity' references action 
+    fact "VerifiedSignatureR" (arity 7, Linear) 
   but no rule has such an action.
 
 Restriction actions
 ===================
 
-  restriction `method_three' references action 
+  restriction `method_two' references action 
     fact "MethodOk" (arity 1, Linear) 
   but no rule has such an action.
 *)

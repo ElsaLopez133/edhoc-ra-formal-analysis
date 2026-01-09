@@ -347,9 +347,9 @@ This crucially requires that even with a man in the middle, or with a non truste
 // Attestation freshness 
 // lemma AttestationEvidenceFreshness:
 //   "All m pkI1 pkI2 pkR1 pkR2 nonce sig1 sig2 cid1 cid2 pk_attkey1 pk_attkey2 y1 y2 gxy1 gxy2 #i #j #k.
-//     AttestationAcceptedR(cid1, m, pkI1, pkR1, sig1, nonce, y1, gxy1, pk_attkey1)@i
+//     VerifiedNonceR(cid1, m, pkI1, pkR1, sig1, nonce, y1, gxy1, pk_attkey1)@i
 //     &
-//     AttestationAcceptedR(cid2, m, pkI2, pkR2, sig2, nonce, y2, gxy2, pk_attkey2)@j
+//     VerifiedNonceR(cid2, m, pkI2, pkR2, sig2, nonce, y2, gxy2, pk_attkey2)@j
 //     &
 //     HonestNonce(nonce)@k
 //   ==> 
@@ -378,22 +378,22 @@ This crucially requires that even with a man in the middle, or with a non truste
 //   "
 
 // Agreement of parameters for attestation and authentication
-lemma AgreementParamaters:
-  "All cidI cidR method pkI pkR gxy y nonce sig ak pk_attkey #i #j #k.
-     FinishR(cidR, method, pkI, pkR, gxy, y, nonce, sig, pk_attkey)@i
-     &
-     Honest(pkI)@j
-     &
-     Honest(pkR)@k
-   ==>
-   (Ex cidI ak x #t. SentByI(cidI, method, pkI, pkR, gxy, x, nonce, sig, ak, pk_attkey)@t & t < i )
-    |
-    (Ex pkR #t. Compromise(pkR)@t & t < i)
-    |
-    (Ex pkI #t. Compromise(pkI)@t & t < i)
-    |
-    (Ex ak #t. Compromise(ak)@t & t < i)
-    "   
+// lemma AgreementParamaters:
+//   "All cidI cidR method pkI pkR gxy y nonce sig ak pk_attkey #i #j #k.
+//      FinishR(cidR, method, pkI, pkR, gxy, y, nonce, sig, pk_attkey)@i
+//      &
+//      Honest(pkI)@j
+//      &
+//      Honest(pkR)@k
+//    ==>
+//    (Ex cidI ak x #t. SentByI(cidI, method, pkI, pkR, gxy, x, nonce, sig, ak, pk_attkey)@t & t < i )
+//     |
+//     (Ex pkR #t. Compromise(pkR)@t & t < i)
+//     |
+//     (Ex pkI #t. Compromise(pkI)@t & t < i)
+//     |
+//     (Ex ak #t. Compromise(ak)@t & t < i)
+//     "   
 
 
 // lemma ChannelBinding:

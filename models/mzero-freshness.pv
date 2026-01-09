@@ -92,7 +92,7 @@ set simplifyProcess = false.
 set reconstructTrace = false.
 
 (* can be used to restrict methods *)
-restriction m:bitstring; event(eMethodOk(m)) ==> m=method_three.
+restriction m:bitstring; event(eMethodOk(m)) ==> m=method_zero.
 
 (*AttestationEvidenceFreshness*)
 query cid1:bitstring, cid2:bitstring, gxy1:bitstring, gxy2:bitstring,
@@ -813,7 +813,7 @@ Inexistant lemma actions
 Restriction actions
 ===================
 
-  restriction `method_three' references action 
+  restriction `method_zero' references action 
     fact "MethodOk" (arity 1, Linear) 
   but no rule has such an action.
 *)
@@ -847,7 +847,7 @@ Inexistant lemma actions
 Restriction actions
 ===================
 
-  restriction `method_three' references action 
+  restriction `method_zero' references action 
     fact "MethodOk" (arity 1, Linear) 
   but no rule has such an action.
 *)
