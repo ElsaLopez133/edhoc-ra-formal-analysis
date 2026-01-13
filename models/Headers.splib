@@ -162,24 +162,24 @@ query th3:bitstring, pkI:bitstring, proofnr:bitstring, i:time,
 
 
 
-#ifdef not LeakShare & not NonRepudiation & not XorPrecise & not KEM & not diffEquiv
+// #ifdef not LeakShare & not NonRepudiation & not XorPrecise & not KEM & not diffEquiv
 
-export queries:
-"
-not attacker (new X_1 ).
-not attacker (new Y_1 ).
+// export queries:
+// "
+// not attacker (new X_1 ).
+// not attacker (new Y_1 ).
 
-"
+// "
 
-#else
+// #else
 
-export queries:
-"
-axiom k:bitstring; event(eShare( k )) && attacker( k ) ==> event(eLeakShare(k)).
-axiom k:bitstring; event(eShareLT( k )) && attacker( k ) ==> event(eLeak(k)).
-"
+// export queries:
+// "
+// axiom k:bitstring; event(eShare( k )) && attacker( k ) ==> event(eLeakShare(k)).
+// axiom k:bitstring; event(eShareLT( k )) && attacker( k ) ==> event(eLeak(k)).
+// "
 
-#endif
+// #endif
 
 
 #ifdef MethodZero
