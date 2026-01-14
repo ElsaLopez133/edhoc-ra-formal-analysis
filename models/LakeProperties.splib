@@ -460,14 +460,50 @@ This crucially requires that even with a man in the middle, or with a non truste
 
 //   "
 
+//     lemma ChannelBinding:
+// "All cidI cidR pkI pkR pkI2 pkR2 nonce sig gxy gxy2 th3I th3R ak pk_attkey #i.
+//     AttestationAcceptedR(cidR, pkI, pkR, nonce, sig, gxy, th3R, pk_attkey)@i 
+//   ==>
+//     (Ex #t. SentByI(cidI, pkI, pkR, nonce, sig, gxy, th3I, ak, pk_attkey)@t
+//     & 
+//     th3I = th3R
+//     &
+//     t < i)
+//     |
+//     (Ex #t. LeakAttKey(ak)@t )
+//     // |
+//     // (Ex pkI #t. Compromise(pkI)@t  )
+//     // |
+//     // (Ex pkR #t. Compromise(pkR)@t )
+
+//   "
+
+
     lemma ChannelBinding:
-"All cidI cidR pkI1 pkR1 pkI2 pkR2 nonce sig gxy1 gxy2 th3I th3R ak pk_attkey #i.
-    AttestationAcceptedR(cidR, pkI1, pkR1, nonce, sig, gxy1, th3R, pk_attkey)@i 
-  ==>
-    (Ex #t. SentByI(cidI, pkI2, pkR2, nonce, sig, gxy2, th3I, ak, pk_attkey)@t
-    // & 
-    // th3I = th3R
+"All cid id_cred_i id_cred_i_in  #i #j.
+    Accept_Auth(cid, id_cred_i)@i
     &
-    t < i)
+    Accept_Att(cid, id_cred_i_in)@j 
+  ==>
+    id_cred_i = id_cred_i_in
+    // |
+    // (Ex ak #t. LeakAttKey(ak)@t )
+    // |
+    // (Ex pkI #t. Compromise(pkI)@t  )
+    // |
+    // (Ex pkR #t. Compromise(pkR)@t )
 
   "
+
+
+
+//     lemma ChannelBinding:
+// "All cidI cidR pkI pkR pkI2 pkR2 nonce sig gxy gxy2 th3I th3R ak pk_attkey #i #j.
+//     AttestationAcceptedR(cidR, pkI, pkR, nonce, sig, gxy, th3R, pk_attkey)@i 
+//     &
+//     SentByI(cidI, pkI, pkR, nonce, sig, gxy, th3I, ak, pk_attkey)@j
+//   ==>
+//     th3I = th3R
+//     &
+//     j < i
+//   "

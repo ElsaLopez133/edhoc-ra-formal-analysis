@@ -55,11 +55,22 @@ equations: check_grp(x) = const_grp
 
 
 
+// #ifdef WeakAEAD
+
+// functions: aeadmalleable/2
+
+// equations: aeadmalleable(aeadenc(m,r,k,aa),r2) = aeadenc(m,r2,k,aa)
+
+// #endif
+
 #ifdef WeakAEAD
 
 functions: aeadmalleable/2
 
-equations: aeadmalleable(aeadenc(m,r,k,aa),r2) = aeadenc(m,r2,k,aa)
+// attacker can transform a ciphertext of m into a ciphertext of m2
+// under the same (k, ad), without knowing k.
+equations:
+  aeadmalleable(aeadenc(m,r,k,ad), m2) = aeadenc(m2,r,k,ad)
 
 #endif
 
@@ -68,6 +79,7 @@ equations: aeadmalleable(aeadenc(m,r,k,aa),r2) = aeadenc(m,r2,k,aa)
 #define NonRepudiation
 
 #endif
+
 
 // we begin with with processes dedicated for the non-repudiation analysis
 #ifdef NonRepudiationSoundness

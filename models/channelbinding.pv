@@ -96,16 +96,16 @@ set reconstructTrace = false.
 restriction m:bitstring; event(eMethodOk(m)) ==> m=method_three.
 
 (*ChannelBinding*)
-query ak:bitstring, cidI:bitstring, cidR:bitstring, gxy1:bitstring,
-      gxy2:bitstring, nonce:bitstring, pkI1:bitstring, pkI2:bitstring,
-      pkR1:bitstring, pkR2:bitstring, pk_attkey:bitstring, sig:bitstring,
-      th3I:bitstring, th3R:bitstring, i:time, t:time;
- (event(eAttestationAcceptedR( cidR, pkI1, pkR1, nonce, sig, gxy1, th3R,
-                               pk_attkey
-        ))@i) ==>
- ((event(eSentByI( cidI, pkI2, pkR2, nonce, sig, gxy2, th3I, ak, pk_attkey
-         ))@t) &&
-  (t < i))
+query ak:bitstring, cidI:bitstring, cidR:bitstring, gxy:bitstring,
+      gxy2:bitstring, nonce:bitstring, pkI:bitstring, pkI2:bitstring,
+      pkR:bitstring, pkR2:bitstring, pk_attkey:bitstring, sig:bitstring,
+      th3I:bitstring, th3R:bitstring, i:time, j:time;
+ ((event(eAttestationAcceptedR( cidR, pkI, pkR, nonce, sig, gxy, th3R,
+                                pk_attkey
+         ))@i) &&
+  (event(eSentByI( cidI, pkI, pkR, nonce, sig, gxy, th3I, ak, pk_attkey
+         ))@j)) ==>
+ ((th3I = th3R) && (j < i))
 .
 let MakeDEO()=
     0.
@@ -829,27 +829,24 @@ Restriction actions
 ====================
 
   lemma `ChannelBinding' cannot be converted to a guarded formula:
-    unguarded variable(s) 'cidI', 'pkI2', 'pkR2', 'gxy2', 'th3I', 'ak'
-    in the subformula
-      "∀ cidI cidR pkI1 pkR1 pkI2 pkR2 nonce sig gxy1 gxy2 th3I th3R ak
-         pk_attkey #i.
-        (AttestationAcceptedR( cidR, pkI1, pkR1, nonce, sig, gxy1, th3R,
-                               pk_attkey
-         ) @ #i) ⇒
-        (∃ #t.
-          (SentByI( cidI, pkI2, pkR2, nonce, sig, gxy2, th3I, ak, pk_attkey
-           ) @ #t) ∧
-          (#t < #i))"
+    unguarded variable(s) 'pkI2', 'pkR2', 'gxy2' in the subformula
+      "∀ cidI cidR pkI pkR pkI2 pkR2 nonce sig gxy gxy2 th3I th3R ak
+         pk_attkey #i #j.
+        ((AttestationAcceptedR( cidR, pkI, pkR, nonce, sig, gxy, th3R,
+                                pk_attkey
+          ) @ #i) ∧
+         (SentByI( cidI, pkI, pkR, nonce, sig, gxy, th3I, ak, pk_attkey
+          ) @ #j)) ⇒
+        ((th3I = th3R) ∧ (#j < #i))"
     in the formula
-      "∀ cidI cidR pkI1 pkR1 pkI2 pkR2 nonce sig gxy1 gxy2 th3I th3R ak
-         pk_attkey #i.
-        (AttestationAcceptedR( cidR, pkI1, pkR1, nonce, sig, gxy1, th3R,
-                               pk_attkey
-         ) @ #i) ⇒
-        (∃ #t.
-          (SentByI( cidI, pkI2, pkR2, nonce, sig, gxy2, th3I, ak, pk_attkey
-           ) @ #t) ∧
-          (#t < #i))"
+      "∀ cidI cidR pkI pkR pkI2 pkR2 nonce sig gxy gxy2 th3I th3R ak
+         pk_attkey #i #j.
+        ((AttestationAcceptedR( cidR, pkI, pkR, nonce, sig, gxy, th3R,
+                                pk_attkey
+          ) @ #i) ∧
+         (SentByI( cidI, pkI, pkR, nonce, sig, gxy, th3I, ak, pk_attkey
+          ) @ #j)) ⇒
+        ((th3I = th3R) ∧ (#j < #i))"
 *)
 
 (*
@@ -885,27 +882,24 @@ Restriction actions
 ====================
 
   lemma `ChannelBinding' cannot be converted to a guarded formula:
-    unguarded variable(s) 'cidI', 'pkI2', 'pkR2', 'gxy2', 'th3I', 'ak'
-    in the subformula
-      "∀ cidI cidR pkI1 pkR1 pkI2 pkR2 nonce sig gxy1 gxy2 th3I th3R ak
-         pk_attkey #i.
-        (AttestationAcceptedR( cidR, pkI1, pkR1, nonce, sig, gxy1, th3R,
-                               pk_attkey
-         ) @ #i) ⇒
-        (∃ #t.
-          (SentByI( cidI, pkI2, pkR2, nonce, sig, gxy2, th3I, ak, pk_attkey
-           ) @ #t) ∧
-          (#t < #i))"
+    unguarded variable(s) 'pkI2', 'pkR2', 'gxy2' in the subformula
+      "∀ cidI cidR pkI pkR pkI2 pkR2 nonce sig gxy gxy2 th3I th3R ak
+         pk_attkey #i #j.
+        ((AttestationAcceptedR( cidR, pkI, pkR, nonce, sig, gxy, th3R,
+                                pk_attkey
+          ) @ #i) ∧
+         (SentByI( cidI, pkI, pkR, nonce, sig, gxy, th3I, ak, pk_attkey
+          ) @ #j)) ⇒
+        ((th3I = th3R) ∧ (#j < #i))"
     in the formula
-      "∀ cidI cidR pkI1 pkR1 pkI2 pkR2 nonce sig gxy1 gxy2 th3I th3R ak
-         pk_attkey #i.
-        (AttestationAcceptedR( cidR, pkI1, pkR1, nonce, sig, gxy1, th3R,
-                               pk_attkey
-         ) @ #i) ⇒
-        (∃ #t.
-          (SentByI( cidI, pkI2, pkR2, nonce, sig, gxy2, th3I, ak, pk_attkey
-           ) @ #t) ∧
-          (#t < #i))"
+      "∀ cidI cidR pkI pkR pkI2 pkR2 nonce sig gxy gxy2 th3I th3R ak
+         pk_attkey #i #j.
+        ((AttestationAcceptedR( cidR, pkI, pkR, nonce, sig, gxy, th3R,
+                                pk_attkey
+          ) @ #i) ∧
+         (SentByI( cidI, pkI, pkR, nonce, sig, gxy, th3I, ak, pk_attkey
+          ) @ #j)) ⇒
+        ((th3I = th3R) ∧ (#j < #i))"
 *)
 
 (*
