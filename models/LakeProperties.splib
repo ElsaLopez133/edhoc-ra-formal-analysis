@@ -447,17 +447,16 @@ This crucially requires that even with a man in the middle, or with a non truste
 //   "
 
 
-  // 我在signature 里加上了 TH_4, after the measurement_hash, let TH_4 be the last variable in the signature, and I added the measurements back in the model, then I got true with this following lemma
+  // 我在signature 里加上了 TH_3, after the measurement_hash, let TH_3 be the last variable in the signature, and I added the measurements back in the model, then I got true with this following lemma
 //     lemma ChannelBinding:
 // "All cidI cidR pkI pkR nonce sig gxy gxyI th3I th3R ak pk_attkey #i.
 //     AttestationAcceptedR(cidR, pkI, pkR, nonce, sig, gxy, th3R, pk_attkey)@i 
 //   ==>
 //     (Ex #t. SentByI(cidI, pkI, pkR, nonce, sig, gxy, th3I, ak, pk_attkey)@t
-//     // & 
-//     // th3I = th3R
+//     & 
+//     th3I = th3R
 //     &
 //     t < i)
-
 //   "
 
 //     lemma ChannelBinding:
@@ -469,8 +468,24 @@ This crucially requires that even with a man in the middle, or with a non truste
 //     th3I = th3R
 //     &
 //     t < i)
-//     |
-//     (Ex #t. LeakAttKey(ak)@t )
+//     // |
+//     // (Ex #t. LeakAttKey(ak)@t )
+//     // |
+//     // (Ex pkI #t. Compromise(pkI)@t  )
+//     // |
+//     // (Ex pkR #t. Compromise(pkR)@t )
+//   "
+
+
+//     lemma ChannelBinding:
+// "All cid id_cred_i id_cred_i_in TH_3 #i #j.
+//     Accept_Auth(cid, id_cred_i, TH_3)@i
+//     &
+//     Accept_Att(cid, id_cred_i_in, TH_3)@j 
+//   ==>
+//     id_cred_i = id_cred_i_in
+//     // |
+//     // (Ex ak #t. LeakAttKey(ak)@t )
 //     // |
 //     // (Ex pkI #t. Compromise(pkI)@t  )
 //     // |
@@ -479,31 +494,14 @@ This crucially requires that even with a man in the middle, or with a non truste
 //   "
 
 
+//// 永远保真
     lemma ChannelBinding:
-"All cid id_cred_i id_cred_i_in  #i #j.
-    Accept_Auth(cid, id_cred_i)@i
+"All cidI cidR pkI pkR pkI2 pkR2 nonce sig gxy gxy2 th3I th3R ak pk_attkey #i #j.
+    AttestationAcceptedR(cidR, pkI, pkR, nonce, sig, gxy, th3R, pk_attkey)@i 
     &
-    Accept_Att(cid, id_cred_i_in)@j 
+    SentByI(cidI, pkI, pkR, nonce, sig, gxy, th3I, ak, pk_attkey)@j
   ==>
-    id_cred_i = id_cred_i_in
-    // |
-    // (Ex ak #t. LeakAttKey(ak)@t )
-    // |
-    // (Ex pkI #t. Compromise(pkI)@t  )
-    // |
-    // (Ex pkR #t. Compromise(pkR)@t )
-
+    th3I = th3R
+    &
+    j < i
   "
-
-
-
-//     lemma ChannelBinding:
-// "All cidI cidR pkI pkR pkI2 pkR2 nonce sig gxy gxy2 th3I th3R ak pk_attkey #i #j.
-//     AttestationAcceptedR(cidR, pkI, pkR, nonce, sig, gxy, th3R, pk_attkey)@i 
-//     &
-//     SentByI(cidI, pkI, pkR, nonce, sig, gxy, th3I, ak, pk_attkey)@j
-//   ==>
-//     th3I = th3R
-//     &
-//     j < i
-//   "

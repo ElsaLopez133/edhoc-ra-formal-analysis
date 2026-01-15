@@ -71,7 +71,6 @@ equations: get_DH_cred(id(x,y,z))=y,
 
 // new adding for test
 #define MethodThree
-#define WeakAEAD
 
 #include "Headers.splib"
 
@@ -186,7 +185,7 @@ let I(~cid, ~skI, ~I, ~ak, ~measurement, ID_CRED_R) =
 				let TH_3 = hash(<wrap(TH_2), plaintext_2, pkR>) in
 				let signature = sign(<'Signature1',ID_CRED_I, nonceR, measurement_hash>,'rep', ~ak) in
 				let EAD_3 = <ID_CRED_I, nonceR, signature> in
-				out (EAD_3);
+				// out (EAD_3);
 				event AttestationGeneratedI(~cid, pkI, pkR, nonceR, signature, ~ak, ~X, G_YX);
 
 				// let TH_3 = hash(<wrap(TH_2), plaintext_2, pkR>) in
@@ -234,7 +233,7 @@ let I(~cid, ~skI, ~I, ~ak, ~measurement, ID_CRED_R) =
 				let TH_3 = hash(<wrap(TH_2), plaintext_2, pkR>) in
 				let signature = sign(<'Signature1',ID_CRED_I, nonceR, measurement_hash>,'rep', ~ak) in
 				let EAD_3 = <ID_CRED_I, nonceR, signature> in
-				out (EAD_3);
+				// out (EAD_3);
 				event AttestationGeneratedI(~cid, pkI, pkR, nonceR, signature, ~ak, ~X, G_YX);
 
 				// let TH_3 = hash(<wrap(TH_2), plaintext_2, pkR>) in
@@ -280,7 +279,7 @@ let I(~cid, ~skI, ~I, ~ak, ~measurement, ID_CRED_R) =
 				let TH_3 = hash(<wrap(TH_2), plaintext_2, pkR>) in
 				let signature = sign(<'Signature1',ID_CRED_I, nonceR, measurement_hash>,'rep', ~ak) in
 				let EAD_3 = <ID_CRED_I, nonceR, signature> in
-				out (EAD_3);
+				// out (EAD_3);
 				event AttestationGeneratedI(~cid, pkI, pkR, nonceR, signature, ~ak, ~X, G_YX);
 
 				// let TH_3 = hash(<wrap(TH_2), plaintext_2, pkR>) in
@@ -332,7 +331,7 @@ let I(~cid, ~skI, ~I, ~ak, ~measurement, ID_CRED_R) =
 				let TH_3 = hash(<wrap(TH_2), plaintext_2, pkR>) in
 				let signature = sign(<'Signature1',ID_CRED_I, nonceR, measurement_hash>,'rep', ~ak) in
 				let EAD_3 = <ID_CRED_I, nonceR, signature> in
-				out (EAD_3);
+				// out (EAD_3);
 				event AttestationGeneratedI(~cid, pkI, pkR, nonceR, signature, ~ak, ~X, G_YX);
 
 				// let TH_3 = hash(<wrap(TH_2), plaintext_2, pkR>) in
@@ -661,14 +660,14 @@ let R(~cid, ~skR,~R, measurement_hash_R) =
 		   		0
 			) 
 			else (
-				event Accept_Auth(~cid, ID_CRED_I);
+				event Accept_Auth(~cid, ID_CRED_I, TH_3);
 				let <ID_CRED_I_in, nonceR_in, signature_in> = EAD_3 in        
 				if (verify(signature_in, <'Signature1',ID_CRED_I_in, nonceR_in, measurement_hash_R>, pk_attkey) = sigtrue) then (
 					event VerifiedSignatureR(~cid, pkI, pkR, nonceR_in, signature_in, ~Y, G_XY);
 					if (~nonceR = nonceR_in) then (
 						event VerifiedNonceR(~cid, method_three, pkI, pkR, signature_in, nonceR_in, ~Y, G_XY, pk_attkey);
 						event AttestationAcceptedR(~cid, pkI, pkR, nonceR_in, signature_in, G_XY, TH_3, pk_attkey);
-						event Accept_Att(~cid, ID_CRED_I_in);
+						event Accept_Att(~cid, ID_CRED_I_in, TH_3);
 						let PRK_out = edhoc_kdf(PRK_4e3m, 'seven', TH_4, hash_length) in
 						event AcceptR(~cid,method_three,pkI,pkR,PRK_4e3m,PRK_out,~Y,G_X);
 						event AcceptRRA(~cid,method_three,pkI,pkR,PRK_4e3m,PRK_out,~Y,G_X, G_XY);
