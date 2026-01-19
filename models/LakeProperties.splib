@@ -459,49 +459,88 @@ This crucially requires that even with a man in the middle, or with a non truste
 //     t < i)
 //   "
 
+
 //     lemma ChannelBinding:
-// "All cidI cidR pkI pkR pkI2 pkR2 nonce sig gxy gxy2 th3I th3R ak pk_attkey #i.
-//     AttestationAcceptedR(cidR, pkI, pkR, nonce, sig, gxy, th3R, pk_attkey)@i 
+// "All cidI cidR pkI pkR pkI2 pkR2 nonce sig gxy gxy2 th3I th3R ak pk_attkey id_att #i.
+//     AttestationAcceptedR(cidR, pkI, pkR, nonce, sig, gxy, th3R, pk_attkey, id_att)@i 
 //   ==>
-//     (Ex #t. SentByI(cidI, pkI, pkR, nonce, sig, gxy, th3I, ak, pk_attkey)@t
+//     (Ex #t. SentByI(cidI, pkI, pkR, nonce, sig, gxy2, th3I, ak, pk_attkey, id_att)@t
 //     & 
 //     th3I = th3R
 //     &
 //     t < i)
-//     // |
-//     // (Ex #t. LeakAttKey(ak)@t )
-//     // |
-//     // (Ex pkI #t. Compromise(pkI)@t  )
-//     // |
-//     // (Ex pkR #t. Compromise(pkR)@t )
+//     |
+//     (Ex #t. LeakAttKey(ak)@t )
+//     |
+//     (Ex pkI #t. Compromise(pkI)@t  )
+//     |
+//     (Ex pkR #t. Compromise(pkR)@t )
 //   "
+
+// cannot be proved
+//     lemma ChannelBinding:
+// "All cid id_cred_i id_cred_att TH_3 nonce #i #j.
+//     // Accept_Auth(cid, id_cred_i, TH_3)@i
+//     // &
+//     Accept_Att(cid, id_cred_att , nonce, TH_3)@j 
+//   ==>
+//     (Ex #k. AttGeneratedI(cid, id_cred_att, nonce, TH_3)@k
+//     &
+//     k < j)
+//   "
+
+    // |
+    // (Ex ak #t. LeakAttKey(ak)@t )
+    // |
+    // (Ex pkI #t. Compromise(pkI)@t  )
+    // |
+    // (Ex pkR #t. Compromise(pkR)@t )
 
 
 //     lemma ChannelBinding:
-// "All cid id_cred_i id_cred_i_in TH_3 #i #j.
-//     Accept_Auth(cid, id_cred_i, TH_3)@i
+// "All nonce th3I th3R gxy1 gxy2 pk_attkey #i #j.
+//     Att_generate(nonce, th3I, gxy1, pk_attkey)@i
 //     &
-//     Accept_Att(cid, id_cred_i_in, TH_3)@j 
+//     Att_good(nonce, th3R, gxy2, pk_attkey)@j 
 //   ==>
-//     id_cred_i = id_cred_i_in
-//     // |
-//     // (Ex ak #t. LeakAttKey(ak)@t )
-//     // |
-//     // (Ex pkI #t. Compromise(pkI)@t  )
-//     // |
-//     // (Ex pkR #t. Compromise(pkR)@t )
-
+//     th3I = th3R
+//     &
+//     gxy1 = gxy2
+//     &
+//     i < j
 //   "
+
+//     lemma ChannelBinding:
+// "All nonce th3 gxy pk_attkey #i.
+//     Att_good(nonce, th3, gxy, pk_attkey)@i 
+//   ==>
+//     (Ex #k. Att_generate(nonce,th3, gxy, pk_attkey)@k
+//     &
+//     k < i 
+//     )
+//   "
+
+lemma ChannelBinding_RelayAttack:
+"All cidR pkI pkR nonce sig gxyR th3R pk_attkey id_att #j.
+    AttestationAcceptedR(cidR, pkI, pkR, nonce, sig, gxyR, th3R, pk_attkey, id_att)@j
+  ==>
+    (Ex cidI gxyI th3I ak #i.
+        SentByI(cidI, pkI, pkR, nonce, sig, gxyI, th3I, ak, pk_attkey, id_att)@i
+        & i < j
+        & gxyI = gxyR
+        & th3I = th3R
+    )
+"
 
 
 //// 永远保真
-    lemma ChannelBinding:
-"All cidI cidR pkI pkR pkI2 pkR2 nonce sig gxy gxy2 th3I th3R ak pk_attkey #i #j.
-    AttestationAcceptedR(cidR, pkI, pkR, nonce, sig, gxy, th3R, pk_attkey)@i 
-    &
-    SentByI(cidI, pkI, pkR, nonce, sig, gxy, th3I, ak, pk_attkey)@j
-  ==>
-    th3I = th3R
-    &
-    j < i
-  "
+//     lemma ChannelBinding:
+// "All cidI cidR pkI pkR pkI2 pkR2 nonce sig gxy gxy2 th3I th3R ak pk_attkey id_att #i #j.
+//     AttestationAcceptedR(cidR, pkI, pkR, nonce, sig, gxy, th3R, pk_attkey, id_att)@i 
+//     &
+//     SentByI(cidI, pkI, pkR, nonce, sig, gxy2, th3I, ak, pk_attkey, id_att)@j
+//   ==>
+//     th3I = th3R
+//     &
+//     j < i
+//   "

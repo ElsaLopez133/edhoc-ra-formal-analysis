@@ -40,14 +40,21 @@ functions: method_three/0, length/0,
 		   suitesIConst/0, suitesRConst/0,
 		   edhoc_kdf/4,
 		   aeadenc/4, aeaddec/3 [destructor],
-		   pk/1,  id/3, get_DH_cred/1 [destructor], get_sig_cred/1 [destructor], get_p_attkey/1 [destructor],
+		   pk/1,  id/2, get_DH_cred/1 [destructor], get_sig_cred/1 [destructor], get_p_attkey/1 [destructor],
 		   wrap/1,
+		   id_att/2, get_meas/1 [destructor], get_att_key/1 [destructor],
 		   hash/1,hkdfextract/2, hkdfexpand/2
+		   
 
-equations: get_DH_cred(id(x,y,z))=y,
-           get_sig_cred(id(x,y,z))=x,
-           get_p_attkey(id(x,y,z))=z,
-           aeaddec(aeadenc(m,r,k,ad),k,ad) = m
+equations:
+			get_DH_cred(id(x,y))=y,
+            get_sig_cred(id(x,y))=x,
+			//   get_DH_cred(id(x,y,z))=y,
+//            get_sig_cred(id(x,y,z))=x,
+        //    get_p_attkey(id(x,y,z))=z,
+			get_meas(id_att(x,y))=x,
+			get_att_key(id_att(x,y))=y,
+            aeaddec(aeadenc(m,r,k,ad),k,ad) = m
 
 
 
@@ -143,7 +150,9 @@ let I(~cid, ~skI, ~I, ~ak, ~measurement, ID_CRED_R) =
     (
     	CompromiseShare(~X) |    
     	let CRED_I = pk(~skI) in
-    	let ID_CRED_I = id(CRED_I,  'g'^~I, pk(~ak) ) in   
+    	// let ID_CRED_I = id(CRED_I,  'g'^~I, pk(~ak) ) in
+		let ID_CRED_I = id(CRED_I,  'g'^~I) in   
+		let ID_CRED_Att = id_att(hash(~measurement), pk(~ak)) in
     
     	let G_X =  'g'^~X  in
     	let G_I =  'g'^~I  in    
@@ -186,18 +195,19 @@ let I(~cid, ~skI, ~I, ~ak, ~measurement, ID_CRED_R) =
 				let measurement_hash = hash(~measurement) in
 				//let signature = sign(<'Signature1',ID_CRED_I, nonceR>,'rep', ~ak) in
 				let TH_3 = hash(<wrap(TH_2), plaintext_2, pkR>) in
-				let signature = sign(<'Signature1',ID_CRED_I, nonceR, measurement_hash>,'rep', ~ak) in
-				let EAD_3 = <ID_CRED_I, nonceR, signature> in
-				// out (EAD_3);
+				// let signature = sign(<'Signature1',ID_CRED_I, nonceR, measurement_hash>,'rep', ~ak) in
+				let signature = sign(<'Signature1', ID_CRED_Att, nonceR, measurement_hash>,'rep', ~ak) in
+				// let EAD_3 = <ID_CRED_I, nonceR, signature> in
+				let EAD_3 = < ID_CRED_Att, nonceR, signature> in
 				event AttestationGeneratedI(~cid, pkI, pkR, nonceR, signature, ~ak, ~X, G_YX);
-
+				event AttGeneratedI(~cid, ID_CRED_Att, nonceR, TH_3);
+				event Att_generate(nonceR, TH_3, G_YX, pk(~ak));
 				// let TH_3 = hash(<wrap(TH_2), plaintext_2, pkR>) in
     	        event THIShared(pkI, TH_3); 		
 				let G_YI = G_Y^~I in
 
 				let SALT_4e3m = edhoc_kdf(PRK_3e2m,'five',TH_3,hash_length) in
 				let PRK_4e3m = hkdfextract(SALT_4e3m, G_YI) in 
-				// out(PRK_4e3m);
 		
 				let MAC_3 = edhoc_kdf(PRK_4e3m, 'six', <ID_CRED_I, TH_3, pkI,EAD_3>,hash_length) in
 			    let SIGNATURE_or_MAC_3 = MAC_3 in // 2,3		
@@ -207,7 +217,7 @@ let I(~cid, ~skI, ~I, ~ak, ~measurement, ID_CRED_R) =
 				let plaintext_3 = <ID_CRED_I, SIGNATURE_or_MAC_3,EAD_3> in
 				let m3 = aeadenc(plaintext_3,'rep',K_3,IV_3) in
 				
-				event SentByI(~cid, pkI, pkR, nonceR, signature, G_YX, TH_3, ~ak, pk(~ak));
+				event SentByI(~cid, pkI, pkR, nonceR, signature, G_YX, TH_3, ~ak, pk(~ak), ID_CRED_Att);
 				let TH_4 = hash(<wrap(TH_3), plaintext_3, pkI>) in
 				let PRK_out = edhoc_kdf(PRK_4e3m, 'seven', TH_4, hash_length) in
 				event AcceptI(~cid,method_three,pkI,pkR,PRK_3e2m,PRK_4e3m,PRK_out,~X,G_Y);
@@ -225,7 +235,7 @@ let I(~cid, ~skI, ~I, ~ak, ~measurement, ID_CRED_R) =
 )
 
 
-let R(~cid, ~skR,~R, measurement_hash_R) =
+let R(~cid, ~skR,~R, ID_CRED_Att) =
     // in(<C_R,EAD_2,suitesR>);
     in(<C_R,suitesR>);
     in(<method,suitesI,G_X,C_I,EAD_1>);
@@ -241,7 +251,8 @@ let R(~cid, ~skR,~R, measurement_hash_R) =
     (
     let CRED_R = pk(~skR) in
     
-    let ID_CRED_R = id(CRED_R,G_R, 'none') in
+    // let ID_CRED_R = id(CRED_R,G_R, 'none') in
+	let ID_CRED_R = id(CRED_R,G_R) in
     let TH_1 = hash(<wrap(method), wrap(suitesI), wrap(G_X), wrap(C_I), EAD_1>) in
     let TH_2 = hash(<wrap(G_Y), wrap(TH_1)>) in    
     let PRK_2e = hkdfextract(TH_2, G_XY) in
@@ -276,13 +287,12 @@ let R(~cid, ~skR,~R, measurement_hash_R) =
 	    let plaintext_3 = aeaddec(CIPHERTEXT_3,K_3,IV_3) in
 	    let <ID_CRED_I,SIGNATURE_or_MAC_3,EAD_3> = plaintext_3 in	    
 	    let pkI = get_DH_cred(ID_CRED_I) in
-		let pk_attkey = get_p_attkey(ID_CRED_I) in
+		// let pk_attkey = get_p_attkey(ID_CRED_I) in
 	    let TH_4 = hash(<wrap(TH_3), plaintext_3, pkI>) in	    	    
    	    
         let pkIY = pkI^~Y in
 	    let SALT_4e3m = edhoc_kdf(PRK_3e2m,'five',TH_3,hash_length) in
 	    let PRK_4e3m = hkdfextract(SALT_4e3m, pkIY) in 	    
-		// out(PRK_4e3m);
 	    
    	    let MAC_3 = edhoc_kdf(PRK_4e3m, 'six', <ID_CRED_I, TH_3, pkI,EAD_3>,hash_length) in	    
 	    
@@ -291,19 +301,25 @@ let R(~cid, ~skR,~R, measurement_hash_R) =
 		   		0
 			) 
 			else (
-				event Accept_Auth(~cid, ID_CRED_I, TH_3);
-				let <ID_CRED_I_in, nonceR_in, signature_in> = EAD_3 in        
-				if (verify(signature_in, <'Signature1',ID_CRED_I_in, nonceR_in, measurement_hash_R>, pk_attkey) = sigtrue) then (
+				// event Accept_Auth(~cid, ID_CRED_I, TH_3);
+				// let <ID_CRED_I_in, nonceR_in, signature_in> = EAD_3 in
+				let <=ID_CRED_Att, nonceR_in, signature_in> = EAD_3 in        
+				// let pk_attkey_in = get_p_attkey(ID_CRED_I_in) in
+				// if (verify(signature_in, <'Signature1',ID_CRED_I_in, nonceR_in, measurement_hash_R>, pk_attkey) = sigtrue) then (
+				let measurement_hash_R = get_meas(ID_CRED_Att) in
+				let pk_attkey = get_att_key(ID_CRED_Att) in
+				if (verify(signature_in, <'Signature1', ID_CRED_Att, nonceR_in, measurement_hash_R>, pk_attkey) = sigtrue) then (
 					event VerifiedSignatureR(~cid, pkI, pkR, nonceR_in, signature_in, ~Y, G_XY);
 					if (~nonceR = nonceR_in) then (
 						event VerifiedNonceR(~cid, method_three, pkI, pkR, signature_in, nonceR_in, ~Y, G_XY, pk_attkey);
-						event AttestationAcceptedR(~cid, pkI, pkR, nonceR_in, signature_in, G_XY, TH_3, pk_attkey);
-						event Accept_Att(~cid, ID_CRED_I_in, TH_3);
+						event AttestationAcceptedR(~cid, pkI, pkR, nonceR_in, signature_in, G_XY, TH_3, pk_attkey, ID_CRED_Att);
+						event Accept_Att(~cid, ID_CRED_Att, nonceR_in, TH_3);
+						event Att_good(nonceR_in, TH_3, G_XY, pk_attkey);
 						let PRK_out = edhoc_kdf(PRK_4e3m, 'seven', TH_4, hash_length) in
 						event AcceptR(~cid,method_three,pkI,pkR,PRK_4e3m,PRK_out,~Y,G_X);
 						event AcceptRRA(~cid,method_three,pkI,pkR,PRK_4e3m,PRK_out,~Y,G_X, G_XY);
-						event SecretsR(~cid,method_three,pkI,pkR,PRK_2e,PRK_3e2m,PRK_4e3m,PRK_out,KEYSTREAM_2,K_3,IV_3,~Y,G_X);						    
-						event AcceptRData(PRK_out,method_three,pkI,pkR,~Y,G_X,<TH_2,TH_3,TH_4,suitesI, EAD_1, EAD_2, EAD_3, m1, plaintext_2, plaintext_3>);
+						// event SecretsR(~cid,method_three,pkI,pkR,PRK_2e,PRK_3e2m,PRK_4e3m,PRK_out,KEYSTREAM_2,K_3,IV_3,~Y,G_X);						    
+						// event AcceptRData(PRK_out,method_three,pkI,pkR,~Y,G_X,<TH_2,TH_3,TH_4,suitesI, EAD_1, EAD_2, EAD_3, m1, plaintext_2, plaintext_3>);
 						event FinishR(~cid, method_three, pkI, pkR, G_XY, ~Y, nonceR_in, signature_in, pk_attkey);
 						(
 							ContactJudgeFromR(ID_CRED_I,TH_3,pkI,EAD_3,MAC_3,SIGNATURE_or_MAC_3)
@@ -323,6 +339,7 @@ let R(~cid, ~skR,~R, measurement_hash_R) =
 					leakSKey(PRK_out)
 				)
 				)
+				// )
 			)
   		)
 	)
@@ -334,8 +351,11 @@ let compromise(sk) =
 let compromiseDH(k) =
     in('Comp'); event Compromise( 'g'^k ); event Leak(k); out(k)
 
+// let LeakAttKey(ak) =
+//     in('Comp'); event LeakAttKey(ak); out(ak)
+
 let LeakAttKey(ak) =
-    in('Comp'); event LeakAttKey(ak); out(ak)
+    in('Comp'); event LeakAttKey(pk(ak)); out(ak)
 
       
 process:
@@ -346,16 +366,21 @@ process:
 (!JudgeI)
 |
 !(new ~sk; new ~ltdh; new ~computerId; new ~ak; new ~measurement;
-	let measurement_hash_R = hash(~measurement) in
-    let idd = id(pk(~sk), 'g'^~ltdh, pk(~ak) ) in 
-    out(<idd, pk(~sk), 'g'^~ltdh, pk(~ak) >);
+	let idd = id(pk(~sk), 'g'^~ltdh) in 
+    out(<idd, pk(~sk), 'g'^~ltdh>);
+	let idd_att = id_att(hash(~measurement), pk(~ak)) in
+	// out(<idd_att, hash(~measurement), pk(~ak)>);
+	// let pk_att = pk(~ak) in
     event ShareLT(~ltdh);
       event Honest(pk(~sk));
       event Honest( 'g'^~ltdh );  
 	  // yuxuan added
-	  event Honest(pk(~ak));  
+	  event Honest(pk(~ak));
+	  event Honest(hash(~measurement));
 
-( (! in(cred); I(~computerId,~sk, ~ltdh, ~ak, ~measurement, cred)) | (!R(~computerId,~sk,~ltdh, measurement_hash_R)) | compromise(~sk) | compromiseDH(~ltdh) | LeakAttKey(~ak) ) )
+// ( (! in(cred); I(~computerId,~sk, ~ltdh, ~ak, ~measurement, cred, ~aid)) | (!R(~computerId,~sk,~ltdh, measurement_hash_R, ~aid, pk_att)) | compromise(~sk) | compromiseDH(~ltdh) | LeakAttKey(~ak) ) )
+( (! in(cred); I(~computerId,~sk, ~ltdh, ~ak, ~measurement, cred)) | (!R(~computerId,~sk,~ltdh, idd_att)) | compromise(~sk) | compromiseDH(~ltdh) | LeakAttKey(~ak) ) )
+
 
 
 #include "LakeProperties.splib"
