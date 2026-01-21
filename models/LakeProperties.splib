@@ -344,59 +344,62 @@ This crucially requires that even with a man in the middle, or with a non truste
 // ************** Attestation  **************************************
 // ******************************************************************
 
-// Attestation freshness 
-// lemma AttestationEvidenceFreshness:
-//   "All m pkI1 pkI2 pkR1 pkR2 nonce sig1 sig2 cid1 cid2 pk_attkey1 pk_attkey2 y1 y2 gxy1 gxy2 #i #j #k.
-//     VerifiedNonceR(cid1, m, pkI1, pkR1, sig1, nonce, y1, gxy1, pk_attkey1)@i
-//     &
-//     VerifiedNonceR(cid2, m, pkI2, pkR2, sig2, nonce, y2, gxy2, pk_attkey2)@j
-//     &
-//     HonestNonce(nonce)@k
-//   ==> 
-//   (#i = #j)
-//   &
-//   (#k < #i)
-//   "
+// Evidence freshness and uniqueness
+// TRUE
+lemma AttestationEvidenceFreshness:
+  "All m pkI1 pkI2 pkR1 pkR2 nonce sig1 sig2 cid1 cid2 pk_attkey1 pk_attkey2 y1 y2 gxy1 gxy2 #i #j #k.
+    VerifiedNonceR(cid1, m, pkI1, pkR1, sig1, nonce, y1, gxy1, pk_attkey1)@i
+    &
+    VerifiedNonceR(cid2, m, pkI2, pkR2, sig2, nonce, y2, gxy2, pk_attkey2)@j
+    &
+    HonestNonce(nonce)@k
+  ==> 
+  (#i = #j)
+  &
+  (#k < #i)
+  "
 
-// Attestation integrity -> the evidence is not modified, so signature is correct
-// PASSED
-// lemma AttestationEvidenceIntegrity:
-//   "All cidR pkI pkR nonce sig y gxy #i #j.
-//     VerifiedSignatureR(cidR, pkI, pkR, nonce, sig, y, gxy)@i
-//     &
-//     Honest(pkI)@j
-//   ==> 
-//   (Ex cidI ak x #t. 
-//     AttestationGeneratedI(cidI, pkI, pkR, nonce, sig, ak, x, gxy)@t 
-//     & t < i)
-//   |
-//   (Ex ak #t. LeakAttKey(ak)@t)
-//   |
-//   (Ex #t.  Compromise(pkI)@t)
-//   |
-//   (Ex #t.  Compromise(pkR)@t)
-//   "
+// Evidence integrity -> the evidence is not modified, so signature is correct
+// TRUE
+lemma AttestationEvidenceIntegrity:
+  "All cidR pkI pkR nonce sig y gxy #i #j.
+    VerifiedSignatureR(cidR, pkI, pkR, nonce, sig, y, gxy)@i
+    &
+    Honest(pkI)@j
+  ==> 
+  (Ex cidI ak x #t. 
+    AttestationGeneratedI(cidI, pkI, pkR, nonce, sig, ak, x, gxy)@t 
+    & t < i)
+  |
+  (Ex ak #t. LeakAttKey(ak)@t)
+  |
+  (Ex #t.  Compromise(pkI)@t)
+  |
+  (Ex #t.  Compromise(pkR)@t)
+  "
 
 // Agreement of parameters for attestation and authentication
-// lemma AgreementParamaters:
-//   "All cidI cidR method pkI pkR gxy y nonce sig ak pk_attkey #i #j #k.
-//      FinishR(cidR, method, pkI, pkR, gxy, y, nonce, sig, pk_attkey)@i
-//      &
-//      Honest(pkI)@j
-//      &
-//      Honest(pkR)@k
-//    ==>
-//    (Ex cidI ak x #t. SentByI(cidI, method, pkI, pkR, gxy, x, nonce, sig, ak, pk_attkey)@t & t < i )
-//     |
-//     (Ex pkR #t. Compromise(pkR)@t & t < i)
-//     |
-//     (Ex pkI #t. Compromise(pkI)@t & t < i)
-//     |
-//     (Ex ak #t. Compromise(ak)@t & t < i)
-//     "   
+// TRUE
+lemma AgreementParamaters:
+  "All cidR method pkI pkR gxy y gx gy nonce sig dev_state id_att pk_attkey #i #j #k.
+     FinishR(cidR, method, pkI, pkR, gxy, y, gx, gy, nonce, sig, dev_state, id_att, pk_attkey)@i
+     &
+     Honest(pkI)@j
+     &
+     Honest(pkR)@k
+   ==>
+   (Ex cidI x ak x #t. FinishI(cidI, method, pkI, pkR, gxy, x, gx, gy, nonce, sig, dev_state, id_att, ak, pk_attkey)@t & t < i )
+    |
+    (Ex pkR #t. Compromise(pkR)@t & t < i)
+    |
+    (Ex pkI #t. Compromise(pkI)@t & t < i)
+    |
+    (Ex ak #t. LeakAttKey(ak)@t & t < i)
+    "   
 
-
-lemma ChannelBinding_RelayAttack:
+// Channel binding for attestation and authentication
+// FALSE
+lemma ChannelBinding:
 "All cidR pkI pkR nonce sig gxy gx gy th3 pk_attkey id_att #j.
     AttestationAcceptedR(cidR, pkI, pkR, nonce, sig, gxy, gx, gy, th3, pk_attkey, id_att)@j
   ==>
@@ -411,16 +414,3 @@ lemma ChannelBinding_RelayAttack:
     |
     (Ex pkR #t. Compromise(pkR)@t )
 "
-
-// true with TH_3 in the signature
-// lemma ChannelBinding_RelayAttack:
-// "All cidR pkI pkR nonce sig gxy th3 pk_attkey id_att #j.
-//     AttestationAcceptedR(cidR, pkI, pkR, nonce, sig, gxy, th3, pk_attkey, id_att)@j
-//   ==>
-//     (Ex cidI ak #i.
-//         SentByI(cidI, pkI, pkR, nonce, sig, gxy, th3, ak, pk_attkey, id_att)@i
-//         & i < j
-//     )
-//     |
-//     (Ex ak #t. LeakAttKey(ak)@t )
-// "
