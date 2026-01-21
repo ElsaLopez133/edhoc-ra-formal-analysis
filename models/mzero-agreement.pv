@@ -5,7 +5,6 @@ free sSignature1:bitstring.
 free sSignature2:bitstring.
 free sfive:bitstring.
 free sfour:bitstring.
-free snone:bitstring.
 free snull:bitstring.
 free srep:bitstring.
 free sseven:bitstring.
@@ -28,7 +27,8 @@ fun hash(bitstring):bitstring.
 fun hash_length():bitstring.
 fun hkdfexpand(bitstring,bitstring):bitstring.
 fun hkdfextract(bitstring,bitstring):bitstring.
-fun id(bitstring,bitstring,bitstring):bitstring.
+fun id(bitstring,bitstring):bitstring.
+fun id_att(bitstring,bitstring):bitstring.
 fun iv_length():bitstring.
 fun key_length():bitstring.
 fun length():bitstring.
@@ -50,14 +50,16 @@ event eAcceptIRA(bitstring,bitstring,bitstring,bitstring,bitstring,bitstring,bit
 event eAcceptR(bitstring,bitstring,bitstring,bitstring,bitstring,bitstring,bitstring,bitstring).
 event eAcceptRData(bitstring,bitstring,bitstring,bitstring,bitstring,bitstring,bitstring).
 event eAcceptRRA(bitstring,bitstring,bitstring,bitstring,bitstring,bitstring,bitstring,bitstring,bitstring).
-event eAttestationAcceptedR(bitstring,bitstring,bitstring,bitstring,bitstring,bitstring,bitstring).
+event eAccept_Auth(bitstring,bitstring,bitstring).
+event eAttestationAcceptedR(bitstring,bitstring,bitstring,bitstring,bitstring,bitstring,bitstring,bitstring,bitstring,bitstring,bitstring).
 event eAttestationGeneratedI(bitstring,bitstring,bitstring,bitstring,bitstring,bitstring,bitstring,bitstring).
 event eCompromise(bitstring).
 event eDerivedIShared(bitstring,bitstring).
 event eDerivedIdR(bitstring,bitstring).
 event eDerivedR(bitstring,bitstring,bitstring,bitstring,bitstring).
 event eDerivedRShared(bitstring,bitstring).
-event eFinishR(bitstring,bitstring,bitstring,bitstring,bitstring,bitstring,bitstring,bitstring,bitstring).
+event eFinishI(bitstring,bitstring,bitstring,bitstring,bitstring,bitstring,bitstring,bitstring,bitstring,bitstring,bitstring,bitstring,bitstring,bitstring).
+event eFinishR(bitstring,bitstring,bitstring,bitstring,bitstring,bitstring,bitstring,bitstring,bitstring,bitstring,bitstring,bitstring,bitstring).
 event eHonest(bitstring).
 event eHonestNonce(bitstring).
 event eLeak(bitstring).
@@ -68,7 +70,7 @@ event eMethodOk(bitstring).
 event eSecretsI(bitstring,bitstring,bitstring,bitstring,bitstring,bitstring,bitstring,bitstring,bitstring,bitstring,bitstring,bitstring,bitstring).
 event eSecretsR(bitstring,bitstring,bitstring,bitstring,bitstring,bitstring,bitstring,bitstring,bitstring,bitstring,bitstring,bitstring,bitstring).
 event eSendRData(bitstring,bitstring,bitstring).
-event eSentByI(bitstring,bitstring,bitstring,bitstring,bitstring,bitstring,bitstring,bitstring,bitstring,bitstring).
+event eSentByI(bitstring,bitstring,bitstring,bitstring,bitstring,bitstring,bitstring,bitstring,bitstring,bitstring,bitstring,bitstring).
 event eShare(bitstring).
 event eShareLT(bitstring).
 event eTHIShared(bitstring,bitstring).
@@ -82,35 +84,36 @@ reduc forall ad:bitstring, k:bitstring, m:bitstring, r:bitstring;   aeaddec(aead
 reduc forall m:bitstring, r:bitstring, sk:bitstring;   revealsign(sign(m, r, sk)) = m.
 reduc forall m:bitstring, r:bitstring, sk:bitstring;   verify(sign(m, r, sk), m, pk(sk)) = sigtrue.
 reduc forall m:bitstring, x:bitstring;   decxor(encxor(m, x), x) = m.
-reduc forall x:bitstring, y:bitstring, z:bitstring;   get_DH_cred(id(x, y, z)) = y.
-reduc forall x:bitstring, y:bitstring, z:bitstring;   get_p_attkey(id(x, y, z)) = z.
-reduc forall x:bitstring, y:bitstring, z:bitstring;   get_sig_cred(id(x, y, z)) = x.
+reduc forall x:bitstring, y:bitstring;   get_DH_cred(id(x, y)) = y.
+reduc forall x:bitstring, y:bitstring;   get_att_key(id_att(x, y)) = y.
+reduc forall x:bitstring, y:bitstring;   get_meas(id_att(x, y)) = x.
+reduc forall x:bitstring, y:bitstring;   get_sig_cred(id(x, y)) = x.
 reduc forall x:bitstring;   check_cred(x) = const_cred.
 reduc forall x:bitstring;   check_grp(x) = const_grp.
 set preciseActions=true.
-set simplifyProcess = false.
-set reconstructTrace = false.
+
 
 (* can be used to restrict methods *)
 restriction m:bitstring; event(eMethodOk(m)) ==> m=method_zero.
 
 (*AgreementParamaters*)
-query ak:bitstring, cidI:bitstring, cidR:bitstring, gxy:bitstring,
+query ak:bitstring, cidI:bitstring, cidR:bitstring, dev_state:bitstring,
+      gx:bitstring, gxy:bitstring, gy:bitstring, id_att:bitstring,
       method:bitstring, nonce:bitstring, pkI:bitstring, pkR:bitstring,
       pk_attkey:bitstring, sig:bitstring, x:bitstring, y:bitstring, i:time,
-      j:time, k:time, t:time, ak_1:bitstring, cidI_1:bitstring,
-      pkI_1:bitstring, pkR_1:bitstring;
- (((event(eFinishR( cidR, method, pkI, pkR, gxy, y, nonce, sig, pk_attkey
+      j:time, k:time, t:time, pkI_1:bitstring, pkR_1:bitstring, x_1:bitstring;
+ (((event(eFinishR( cidR, method, pkI, pkR, gxy, y, gx, gy, nonce, sig,
+                    dev_state, id_att, pk_attkey
           ))@i) &&
    (event(eHonest( pkI ))@j)) &&
   (event(eHonest( pkR ))@k)) ==>
- (((((event(eSentByI( cidI_1, method, pkI, pkR, gxy, x, nonce, sig, ak_1,
-                      pk_attkey
+ (((((event(eFinishI( cidI, method, pkI, pkR, gxy, x_1, gx, gy, nonce,
+                      sig, dev_state, id_att, ak, pk_attkey
             ))@t) &&
      (t < i)) ||
     ((event(eCompromise( pkR_1 ))@t) && (t < i))) ||
    ((event(eCompromise( pkI_1 ))@t) && (t < i))) ||
-  ((event(eCompromise( ak_1 ))@t) && (t < i)))
+  ((event(eLeakAttKey( ak ))@t) && (t < i)))
 .
 let MakeDEO()=
     0.
@@ -131,14 +134,15 @@ let JudgeR()=
 let JudgeI()=
     0.
 let I(cid_2:bitstring, skI_2:bitstring, I_2:bitstring, ak_2:bitstring,
-      ID_CRED_R_2:bitstring)=
+      measurement_2:bitstring, ID_CRED_R_2:bitstring)=
     in(att,(method_2:bitstring, (suitesI_2:bitstring, (C_I_2:bitstring, EAD_1_2:bitstring))));
     event eMethodOk( method_2 );
     new X_2:bitstring;
     event eShare( X_2 );
     ((CompromiseShare(X_2))
    | (let CRED_I_2:bitstring=pk(skI_2) in
-      let ID_CRED_I_2:bitstring=id(CRED_I_2, exp(g, I_2), pk(ak_2)) in
+      let ID_CRED_I_2:bitstring=id(CRED_I_2, exp(g, I_2)) in
+      let ID_CRED_Att_2:bitstring=id_att(hash(measurement_2), pk(ak_2)) in
       let G_X_2:bitstring=exp(g, X_2) in
       let G_I_2:bitstring=exp(g, I_2) in
       let m1_2:bitstring=(method_2, (suitesI_2, (G_X_2, (C_I_2, EAD_1_2)))) in
@@ -168,13 +172,14 @@ let I(cid_2:bitstring, skI_2:bitstring, I_2:bitstring, ak_2:bitstring,
                           (sSignature1, (ID_CRED_R_2, (TH_2_2, (pkR_5, (EAD_2_2, MAC_2_5))))),
                           pkR_5) =
                    sigtrue then
-                    (let signature_5:bitstring=sign((sSignature1, (ID_CRED_I_2, nonceR_2)),
+                    (let measurement_hash_5:bitstring=hash(measurement_2) in
+                     let TH_3_5:bitstring=hash((wrap(TH_2_2), (plaintext_2_2, pkR_5))) in
+                     let signature_5:bitstring=sign((sSignature1, (ID_CRED_Att_2, (nonceR_2, measurement_hash_5))),
                                                     srep, ak_2) in
-                     let EAD_3_5:bitstring=(ID_CRED_I_2, (nonceR_2, signature_5)) in
+                     let EAD_3_5:bitstring=(ID_CRED_Att_2, (nonceR_2, signature_5)) in
                      event eAttestationGeneratedI( cid_2, pkI_5, pkR_5, nonceR_2, signature_5,
                                                    ak_2, X_2, G_YX_2
                            );
-                     let TH_3_5:bitstring=hash((wrap(TH_2_2), (plaintext_2_2, pkR_5))) in
                      event eTHIShared( pkI_5, TH_3_5 );
                      let PRK_4e3m_5:bitstring=PRK_3e2m_5 in
                      let MAC_3_5:bitstring=edhoc_kdf(PRK_4e3m_5, ssix,
@@ -186,8 +191,8 @@ let I(cid_2:bitstring, skI_2:bitstring, I_2:bitstring, ak_2:bitstring,
                      let IV_3_5:bitstring=edhoc_kdf(PRK_3e2m_5, sfour, TH_3_5, iv_length) in
                      let plaintext_3_5:bitstring=(ID_CRED_I_2, (SIGNATURE_or_MAC_3_5, EAD_3_5)) in
                      let m3_5:bitstring=aeadenc(plaintext_3_5, srep, K_3_5, IV_3_5) in
-                     event eSentByI( cid_2, method_zero, pkI_5, pkR_5, G_YX_2, X_2, nonceR_2,
-                                     signature_5, ak_2, pk(ak_2)
+                     event eSentByI( cid_2, pkI_5, pkR_5, nonceR_2, signature_5, G_YX_2,
+                                     G_X_2, G_Y_2, TH_3_5, ak_2, pk(ak_2), ID_CRED_Att_2
                            );
                      let TH_4_5:bitstring=hash((wrap(TH_3_5), (plaintext_3_5, pkI_5))) in
                      let PRK_out_5:bitstring=edhoc_kdf(PRK_4e3m_5, sseven, TH_4_5,
@@ -201,10 +206,11 @@ let I(cid_2:bitstring, skI_2:bitstring, I_2:bitstring, ak_2:bitstring,
                      event eSecretsI( cid_2, method_zero, pkI_5, pkR_5, PRK_2e_2, PRK_3e2m_5,
                                       PRK_4e3m_5, PRK_out_5, KEYSTREAM_2_2, K_3_5, IV_3_5, X_2, G_Y_2
                            );
-                     out(att,m3_5);
-                     ((ContactJudgeFromI(ID_CRED_R_2, TH_2_2, pkR_5, EAD_2_2, MAC_2_5,
-                                         SIGNATURE_or_MAC_2_2))
-                    | (leakSKey(PRK_out_5)))))
+                     event eFinishI( cid_2, method_zero, pkI_5, pkR_5, G_YX_2, X_2, G_X_2,
+                                     G_Y_2, nonceR_2, signature_5, measurement_hash_5, ID_CRED_Att_2, ak_2,
+                                     pk(ak_2)
+                           );
+                     out(att,m3_5)))
            else
                (if method_2 = method_one then
                     (let pkR_6:bitstring=get_DH_cred(ID_CRED_R_2) in
@@ -218,13 +224,14 @@ let I(cid_2:bitstring, skI_2:bitstring, I_2:bitstring, ak_2:bitstring,
                                                      (ID_CRED_R_2, (TH_2_2, (pkR_6, EAD_2_2))),
                                                      hash_length) in
                      if SIGNATURE_or_MAC_2_2 = MAC_2_6 then
-                         (let signature_6:bitstring=sign((sSignature1, (ID_CRED_I_2, nonceR_2)),
+                         (let measurement_hash_6:bitstring=hash(measurement_2) in
+                          let TH_3_6:bitstring=hash((wrap(TH_2_2), (plaintext_2_2, pkR_6))) in
+                          let signature_6:bitstring=sign((sSignature1, (ID_CRED_Att_2, (nonceR_2, measurement_hash_6))),
                                                          srep, ak_2) in
-                          let EAD_3_6:bitstring=(ID_CRED_I_2, (nonceR_2, signature_6)) in
+                          let EAD_3_6:bitstring=(ID_CRED_Att_2, (nonceR_2, signature_6)) in
                           event eAttestationGeneratedI( cid_2, pkI_6, pkR_6, nonceR_2, signature_6,
                                                         ak_2, X_2, G_YX_2
                                 );
-                          let TH_3_6:bitstring=hash((wrap(TH_2_2), (plaintext_2_2, pkR_6))) in
                           event eTHIShared( pkI_6, TH_3_6 );
                           let PRK_4e3m_6:bitstring=PRK_3e2m_6 in
                           let MAC_3_6:bitstring=edhoc_kdf(PRK_4e3m_6, ssix,
@@ -236,8 +243,8 @@ let I(cid_2:bitstring, skI_2:bitstring, I_2:bitstring, ak_2:bitstring,
                           let IV_3_6:bitstring=edhoc_kdf(PRK_3e2m_6, sfour, TH_3_6, iv_length) in
                           let plaintext_3_6:bitstring=(ID_CRED_I_2, (SIGNATURE_or_MAC_3_6, EAD_3_6)) in
                           let m3_6:bitstring=aeadenc(plaintext_3_6, srep, K_3_6, IV_3_6) in
-                          event eSentByI( cid_2, method_one, pkI_6, pkR_6, G_YX_2, X_2, nonceR_2,
-                                          signature_6, ak_2, pk(ak_2)
+                          event eSentByI( cid_2, pkI_6, pkR_6, nonceR_2, signature_6, G_YX_2,
+                                          G_X_2, G_Y_2, TH_3_6, ak_2, pk(ak_2), ID_CRED_Att_2
                                 );
                           let TH_4_6:bitstring=hash((wrap(TH_3_6), (plaintext_3_6, pkI_6))) in
                           let PRK_out_6:bitstring=edhoc_kdf(PRK_4e3m_6, sseven, TH_4_6,
@@ -248,10 +255,11 @@ let I(cid_2:bitstring, skI_2:bitstring, I_2:bitstring, ak_2:bitstring,
                           event eSecretsI( cid_2, method_one, pkI_6, pkR_6, PRK_2e_2, PRK_3e2m_6,
                                            PRK_4e3m_6, PRK_out_6, KEYSTREAM_2_2, K_3_6, IV_3_6, X_2, G_Y_2
                                 );
-                          out(att,m3_6);
-                          ((ContactJudgeFromI(ID_CRED_R_2, TH_2_2, pkR_6, EAD_2_2, MAC_2_6,
-                                              SIGNATURE_or_MAC_2_2))
-                         | (leakSKey(PRK_out_6)))))
+                          event eFinishI( cid_2, method_one, pkI_6, pkR_6, G_YX_2, X_2, G_X_2,
+                                          G_Y_2, nonceR_2, signature_6, measurement_hash_6, ID_CRED_Att_2,
+                                          ak_2, pk(ak_2)
+                                );
+                          out(att,m3_6)))
                 else
                     (if method_2 = method_two then
                          (let pkR_7:bitstring=get_sig_cred(ID_CRED_R_2) in
@@ -265,13 +273,14 @@ let I(cid_2:bitstring, skI_2:bitstring, I_2:bitstring, ak_2:bitstring,
                                     (sSignature1, (ID_CRED_R_2, (TH_2_2, (pkR_7, (EAD_2_2, MAC_2_7))))),
                                     pkR_7) =
                              sigtrue then
-                              (let signature_7:bitstring=sign((sSignature1, (ID_CRED_I_2, nonceR_2)),
+                              (let measurement_hash_7:bitstring=hash(measurement_2) in
+                               let TH_3_7:bitstring=hash((wrap(TH_2_2), (plaintext_2_2, pkR_7))) in
+                               let signature_7:bitstring=sign((sSignature1, (ID_CRED_Att_2, (nonceR_2, measurement_hash_7))),
                                                               srep, ak_2) in
-                               let EAD_3_7:bitstring=(ID_CRED_I_2, (nonceR_2, signature_7)) in
+                               let EAD_3_7:bitstring=(ID_CRED_Att_2, (nonceR_2, signature_7)) in
                                event eAttestationGeneratedI( cid_2, pkI_7, pkR_7, nonceR_2, signature_7,
                                                              ak_2, X_2, G_YX_2
                                      );
-                               let TH_3_7:bitstring=hash((wrap(TH_2_2), (plaintext_2_2, pkR_7))) in
                                event eTHIShared( pkI_7, TH_3_7 );
                                let G_YI_3:bitstring=exp(G_Y_2, I_2) in
                                let SALT_4e3m_3:bitstring=edhoc_kdf(PRK_3e2m_7, sfive, TH_3_7,
@@ -285,8 +294,8 @@ let I(cid_2:bitstring, skI_2:bitstring, I_2:bitstring, ak_2:bitstring,
                                let IV_3_7:bitstring=edhoc_kdf(PRK_3e2m_7, sfour, TH_3_7, iv_length) in
                                let plaintext_3_7:bitstring=(ID_CRED_I_2, (SIGNATURE_or_MAC_3_7, EAD_3_7)) in
                                let m3_7:bitstring=aeadenc(plaintext_3_7, srep, K_3_7, IV_3_7) in
-                               event eSentByI( cid_2, method_two, pkI_7, pkR_7, G_YX_2, X_2, nonceR_2,
-                                               signature_7, ak_2, pk(ak_2)
+                               event eSentByI( cid_2, pkI_7, pkR_7, nonceR_2, signature_7, G_YX_2,
+                                               G_X_2, G_Y_2, TH_3_7, ak_2, pk(ak_2), ID_CRED_Att_2
                                      );
                                let TH_4_7:bitstring=hash((wrap(TH_3_7), (plaintext_3_7, pkI_7))) in
                                let PRK_out_7:bitstring=edhoc_kdf(PRK_4e3m_7, sseven, TH_4_7,
@@ -298,10 +307,11 @@ let I(cid_2:bitstring, skI_2:bitstring, I_2:bitstring, ak_2:bitstring,
                                                 PRK_4e3m_7, PRK_out_7, KEYSTREAM_2_2, K_3_7, IV_3_7, X_2,
                                                 G_Y_2
                                      );
-                               out(att,m3_7);
-                               ((ContactJudgeFromI(ID_CRED_R_2, TH_2_2, pkR_7, EAD_2_2, MAC_2_7,
-                                                   SIGNATURE_or_MAC_2_2))
-                              | (leakSKey(PRK_out_7)))))
+                               event eFinishI( cid_2, method_two, pkI_7, pkR_7, G_YX_2, X_2, G_X_2,
+                                               G_Y_2, nonceR_2, signature_7, measurement_hash_7,
+                                               ID_CRED_Att_2, ak_2, pk(ak_2)
+                                     );
+                               out(att,m3_7)))
                      else
                          (if method_2 = method_three then
                               (let pkR_8:bitstring=get_DH_cred(ID_CRED_R_2) in
@@ -315,13 +325,14 @@ let I(cid_2:bitstring, skI_2:bitstring, I_2:bitstring, ak_2:bitstring,
                                                                (ID_CRED_R_2, (TH_2_2, (pkR_8, EAD_2_2))),
                                                                hash_length) in
                                if SIGNATURE_or_MAC_2_2 = MAC_2_8 then
-                                   (let signature_8:bitstring=sign((sSignature1, (ID_CRED_I_2, nonceR_2)),
+                                   (let measurement_hash_8:bitstring=hash(measurement_2) in
+                                    let TH_3_8:bitstring=hash((wrap(TH_2_2), (plaintext_2_2, pkR_8))) in
+                                    let signature_8:bitstring=sign((sSignature1, (ID_CRED_Att_2, (nonceR_2, measurement_hash_8))),
                                                                    srep, ak_2) in
-                                    let EAD_3_8:bitstring=(ID_CRED_I_2, (nonceR_2, signature_8)) in
+                                    let EAD_3_8:bitstring=(ID_CRED_Att_2, (nonceR_2, signature_8)) in
                                     event eAttestationGeneratedI( cid_2, pkI_8, pkR_8, nonceR_2, signature_8,
                                                                   ak_2, X_2, G_YX_2
                                           );
-                                    let TH_3_8:bitstring=hash((wrap(TH_2_2), (plaintext_2_2, pkR_8))) in
                                     event eTHIShared( pkI_8, TH_3_8 );
                                     let G_YI_4:bitstring=exp(G_Y_2, I_2) in
                                     let SALT_4e3m_4:bitstring=edhoc_kdf(PRK_3e2m_8, sfive, TH_3_8,
@@ -335,8 +346,8 @@ let I(cid_2:bitstring, skI_2:bitstring, I_2:bitstring, ak_2:bitstring,
                                     let IV_3_8:bitstring=edhoc_kdf(PRK_3e2m_8, sfour, TH_3_8, iv_length) in
                                     let plaintext_3_8:bitstring=(ID_CRED_I_2, (SIGNATURE_or_MAC_3_8, EAD_3_8)) in
                                     let m3_8:bitstring=aeadenc(plaintext_3_8, srep, K_3_8, IV_3_8) in
-                                    event eSentByI( cid_2, method_three, pkI_8, pkR_8, G_YX_2, X_2, nonceR_2,
-                                                    signature_8, ak_2, pk(ak_2)
+                                    event eSentByI( cid_2, pkI_8, pkR_8, nonceR_2, signature_8, G_YX_2,
+                                                    G_X_2, G_Y_2, TH_3_8, ak_2, pk(ak_2), ID_CRED_Att_2
                                           );
                                     let TH_4_8:bitstring=hash((wrap(TH_3_8), (plaintext_3_8, pkI_8))) in
                                     let PRK_out_8:bitstring=edhoc_kdf(PRK_4e3m_8, sseven, TH_4_8,
@@ -348,11 +359,13 @@ let I(cid_2:bitstring, skI_2:bitstring, I_2:bitstring, ak_2:bitstring,
                                                      PRK_4e3m_8, PRK_out_8, KEYSTREAM_2_2, K_3_8, IV_3_8, X_2,
                                                      G_Y_2
                                           );
-                                    out(att,m3_8);
-                                    ((ContactJudgeFromI(ID_CRED_R_2, TH_2_2, pkR_8, EAD_2_2, MAC_2_8,
-                                                        SIGNATURE_or_MAC_2_2))
-                                   | (leakSKey(PRK_out_8))))))))))).
-let R(cid_2:bitstring, skR_2:bitstring, R_2:bitstring)=
+                                    event eFinishI( cid_2, method_three, pkI_8, pkR_8, G_YX_2, X_2, G_X_2,
+                                                    G_Y_2, nonceR_2, signature_8, measurement_hash_8,
+                                                    ID_CRED_Att_2, ak_2, pk(ak_2)
+                                          );
+                                    out(att,m3_8))))))))).
+let R(cid_2:bitstring, skR_2:bitstring, R_2:bitstring,
+      ID_CRED_Att_2:bitstring)=
     in(att,(C_R_2:bitstring, suitesR_2:bitstring));
     in(att,(method_2:bitstring, (suitesI_2:bitstring, (G_X_2:bitstring, (C_I_2:bitstring, EAD_1_2:bitstring)))));
     event eMethodOk( method_2 );
@@ -364,7 +377,7 @@ let R(cid_2:bitstring, skR_2:bitstring, R_2:bitstring)=
     let G_XY_2:bitstring=exp(G_X_2, Y_2) in
     ((CompromiseShare(Y_2))
    | (let CRED_R_2:bitstring=pk(skR_2) in
-      let ID_CRED_R_2:bitstring=id(CRED_R_2, G_R_2, snone) in
+      let ID_CRED_R_2:bitstring=id(CRED_R_2, G_R_2) in
       let TH_1_2:bitstring=hash((wrap(method_2), (wrap(suitesI_2), (wrap(G_X_2), (wrap(C_I_2), EAD_1_2))))) in
       let TH_2_2:bitstring=hash((wrap(G_Y_2), wrap(TH_1_2))) in
       let PRK_2e_2:bitstring=hkdfextract(TH_2_2, G_XY_2) in
@@ -398,7 +411,6 @@ let R(cid_2:bitstring, skR_2:bitstring, R_2:bitstring)=
            let plaintext_3_5:bitstring=aeaddec(CIPHERTEXT_3_5, K_3_5, IV_3_5) in
            let (ID_CRED_I_5:bitstring, (SIGNATURE_or_MAC_3_5:bitstring, EAD_3_5:bitstring))=plaintext_3_5 in
            let pkI_5:bitstring=get_sig_cred(ID_CRED_I_5) in
-           let pk_attkey_5:bitstring=get_p_attkey(ID_CRED_I_5) in
            let TH_4_5:bitstring=hash((wrap(TH_3_5), (plaintext_3_5, pkI_5))) in
            let PRK_4e3m_5:bitstring=PRK_3e2m_5 in
            let MAC_3_5:bitstring=edhoc_kdf(PRK_4e3m_5, ssix,
@@ -410,8 +422,11 @@ let R(cid_2:bitstring, skR_2:bitstring, R_2:bitstring)=
                (if ID_CRED_R_2 = check_cred(ID_CRED_I_5) then
                     (0)
                 else
-                    (let (ID_CRED_I_in_5:bitstring, (nonceR_in_5:bitstring, signature_in_5:bitstring))=EAD_3_5 in
-                     if verify(signature_in_5, (sSignature1, (ID_CRED_I_in_5, nonceR_in_5)),
+                    (let (=ID_CRED_Att_2, (nonceR_in_5:bitstring, signature_in_5:bitstring))=EAD_3_5 in
+                     let measurement_hash_R_5:bitstring=get_meas(ID_CRED_Att_2) in
+                     let pk_attkey_5:bitstring=get_att_key(ID_CRED_Att_2) in
+                     if verify(signature_in_5,
+                               (sSignature1, (ID_CRED_Att_2, (nonceR_in_5, measurement_hash_R_5))),
                                pk_attkey_5) =
                         sigtrue then
                          (event eVerifiedSignatureR( cid_2, pkI_5, pkR_5, nonceR_in_5,
@@ -422,7 +437,8 @@ let R(cid_2:bitstring, skR_2:bitstring, R_2:bitstring)=
                                                       nonceR_in_5, Y_2, G_XY_2, pk_attkey_5
                                      );
                                event eAttestationAcceptedR( cid_2, pkI_5, pkR_5, nonceR_in_5,
-                                                            signature_in_5, G_XY_2, TH_3_5
+                                                            signature_in_5, G_XY_2, G_X_2, G_Y_2, TH_3_5,
+                                                            pk_attkey_5, ID_CRED_Att_2
                                      );
                                let PRK_out_9:bitstring=edhoc_kdf(PRK_4e3m_5, sseven, TH_4_5,
                                                                  hash_length) in
@@ -439,12 +455,10 @@ let R(cid_2:bitstring, skR_2:bitstring, R_2:bitstring)=
                                event eAcceptRData( PRK_out_9, method_zero, pkI_5, pkR_5, Y_2, G_X_2,
                                                    (TH_2_2, (TH_3_5, (TH_4_5, (suitesI_2, (EAD_1_2, (EAD_2_5, (EAD_3_5, (m1_2, (plaintext_2_5, plaintext_3_5)))))))))
                                      );
-                               event eFinishR( cid_2, method_zero, pkI_5, pkR_5, G_XY_2, Y_2,
-                                               nonceR_in_5, signature_in_5, pk_attkey_5
-                                     );
-                               ((ContactJudgeFromR(ID_CRED_I_5, TH_3_5, pkI_5, EAD_3_5, MAC_3_5,
-                                                   SIGNATURE_or_MAC_3_5))
-                              | (leakSKey(PRK_out_9)))))
+                               event eFinishR( cid_2, method_zero, pkI_5, pkR_5, G_XY_2, Y_2, G_X_2,
+                                               G_Y_2, nonceR_in_5, signature_in_5, measurement_hash_R_5,
+                                               ID_CRED_Att_2, pk_attkey_5
+                                     )))
                      else
                          (let PRK_out_10:bitstring=edhoc_kdf(PRK_4e3m_5, sseven, TH_4_5,
                                                              hash_length) in
@@ -456,10 +470,7 @@ let R(cid_2:bitstring, skR_2:bitstring, R_2:bitstring)=
                                 );
                           event eAcceptRData( PRK_out_10, method_zero, pkI_5, pkR_5, Y_2, G_X_2,
                                               (TH_2_2, (TH_3_5, (TH_4_5, (suitesI_2, (EAD_1_2, (EAD_2_5, (EAD_3_5, (m1_2, (plaintext_2_5, plaintext_3_5)))))))))
-                                );
-                          ((ContactJudgeFromR(ID_CRED_I_5, TH_3_5, pkI_5, EAD_3_5, MAC_3_5,
-                                              SIGNATURE_or_MAC_3_5))
-                         | (leakSKey(PRK_out_10)))))))
+                                )))))
       else
           (if method_2 = method_one then
                (new nonceR_6:bitstring;
@@ -493,7 +504,6 @@ let R(cid_2:bitstring, skR_2:bitstring, R_2:bitstring)=
                 let plaintext_3_6:bitstring=aeaddec(CIPHERTEXT_3_6, K_3_6, IV_3_6) in
                 let (ID_CRED_I_6:bitstring, (SIGNATURE_or_MAC_3_6:bitstring, EAD_3_6:bitstring))=plaintext_3_6 in
                 let pkI_6:bitstring=get_sig_cred(ID_CRED_I_6) in
-                let pk_attkey_6:bitstring=get_p_attkey(ID_CRED_I_6) in
                 let TH_4_6:bitstring=hash((wrap(TH_3_6), (plaintext_3_6, pkI_6))) in
                 let PRK_4e3m_6:bitstring=PRK_3e2m_6 in
                 let MAC_3_6:bitstring=edhoc_kdf(PRK_4e3m_6, ssix,
@@ -505,8 +515,11 @@ let R(cid_2:bitstring, skR_2:bitstring, R_2:bitstring)=
                     (if ID_CRED_R_2 = check_cred(ID_CRED_I_6) then
                          (0)
                      else
-                         (let (ID_CRED_I_in_6:bitstring, (nonceR_in_6:bitstring, signature_in_6:bitstring))=EAD_3_6 in
-                          if verify(signature_in_6, (sSignature1, (ID_CRED_I_in_6, nonceR_in_6)),
+                         (let (=ID_CRED_Att_2, (nonceR_in_6:bitstring, signature_in_6:bitstring))=EAD_3_6 in
+                          let measurement_hash_R_6:bitstring=get_meas(ID_CRED_Att_2) in
+                          let pk_attkey_6:bitstring=get_att_key(ID_CRED_Att_2) in
+                          if verify(signature_in_6,
+                                    (sSignature1, (ID_CRED_Att_2, (nonceR_in_6, measurement_hash_R_6))),
                                     pk_attkey_6) =
                              sigtrue then
                               (event eVerifiedSignatureR( cid_2, pkI_6, pkR_6, nonceR_in_6,
@@ -517,7 +530,8 @@ let R(cid_2:bitstring, skR_2:bitstring, R_2:bitstring)=
                                                            nonceR_in_6, Y_2, G_XY_2, pk_attkey_6
                                           );
                                     event eAttestationAcceptedR( cid_2, pkI_6, pkR_6, nonceR_in_6,
-                                                                 signature_in_6, G_XY_2, TH_3_6
+                                                                 signature_in_6, G_XY_2, G_X_2, G_Y_2, TH_3_6,
+                                                                 pk_attkey_6, ID_CRED_Att_2
                                           );
                                     let PRK_out_11:bitstring=edhoc_kdf(PRK_4e3m_6, sseven, TH_4_6,
                                                                        hash_length) in
@@ -534,12 +548,10 @@ let R(cid_2:bitstring, skR_2:bitstring, R_2:bitstring)=
                                     event eAcceptRData( PRK_out_11, method_one, pkI_6, pkR_6, Y_2, G_X_2,
                                                         (TH_2_2, (TH_3_6, (TH_4_6, (suitesI_2, (EAD_1_2, (EAD_2_6, (EAD_3_6, (m1_2, (plaintext_2_6, plaintext_3_6)))))))))
                                           );
-                                    event eFinishR( cid_2, method_one, pkI_6, pkR_6, G_XY_2, Y_2,
-                                                    nonceR_in_6, signature_in_6, pk_attkey_6
-                                          );
-                                    ((ContactJudgeFromR(ID_CRED_I_6, TH_3_6, pkI_6, EAD_3_6, MAC_3_6,
-                                                        SIGNATURE_or_MAC_3_6))
-                                   | (leakSKey(PRK_out_11)))))
+                                    event eFinishR( cid_2, method_one, pkI_6, pkR_6, G_XY_2, Y_2, G_X_2,
+                                                    G_Y_2, nonceR_in_6, signature_in_6, measurement_hash_R_6,
+                                                    ID_CRED_Att_2, pk_attkey_6
+                                          )))
                           else
                               (let PRK_out_12:bitstring=edhoc_kdf(PRK_4e3m_6, sseven, TH_4_6,
                                                                   hash_length) in
@@ -552,10 +564,7 @@ let R(cid_2:bitstring, skR_2:bitstring, R_2:bitstring)=
                                      );
                                event eAcceptRData( PRK_out_12, method_one, pkI_6, pkR_6, Y_2, G_X_2,
                                                    (TH_2_2, (TH_3_6, (TH_4_6, (suitesI_2, (EAD_1_2, (EAD_2_6, (EAD_3_6, (m1_2, (plaintext_2_6, plaintext_3_6)))))))))
-                                     );
-                               ((ContactJudgeFromR(ID_CRED_I_6, TH_3_6, pkI_6, EAD_3_6, MAC_3_6,
-                                                   SIGNATURE_or_MAC_3_6))
-                              | (leakSKey(PRK_out_12)))))))
+                                     )))))
            else
                (if method_2 = method_two then
                     (new nonceR_7:bitstring;
@@ -588,7 +597,6 @@ let R(cid_2:bitstring, skR_2:bitstring, R_2:bitstring)=
                      let plaintext_3_7:bitstring=aeaddec(CIPHERTEXT_3_7, K_3_7, IV_3_7) in
                      let (ID_CRED_I_7:bitstring, (SIGNATURE_or_MAC_3_7:bitstring, EAD_3_7:bitstring))=plaintext_3_7 in
                      let pkI_7:bitstring=get_DH_cred(ID_CRED_I_7) in
-                     let pk_attkey_7:bitstring=get_p_attkey(ID_CRED_I_7) in
                      let TH_4_7:bitstring=hash((wrap(TH_3_7), (plaintext_3_7, pkI_7))) in
                      let pkIY_3:bitstring=exp(pkI_7, Y_2) in
                      let SALT_4e3m_3:bitstring=edhoc_kdf(PRK_3e2m_7, sfive, TH_3_7,
@@ -601,8 +609,11 @@ let R(cid_2:bitstring, skR_2:bitstring, R_2:bitstring)=
                          (if ID_CRED_R_2 = check_cred(ID_CRED_I_7) then
                               (0)
                           else
-                              (let (ID_CRED_I_in_7:bitstring, (nonceR_in_7:bitstring, signature_in_7:bitstring))=EAD_3_7 in
-                               if verify(signature_in_7, (sSignature1, (ID_CRED_I_in_7, nonceR_in_7)),
+                              (let (=ID_CRED_Att_2, (nonceR_in_7:bitstring, signature_in_7:bitstring))=EAD_3_7 in
+                               let measurement_hash_R_7:bitstring=get_meas(ID_CRED_Att_2) in
+                               let pk_attkey_7:bitstring=get_att_key(ID_CRED_Att_2) in
+                               if verify(signature_in_7,
+                                         (sSignature1, (ID_CRED_Att_2, (nonceR_in_7, measurement_hash_R_7))),
                                          pk_attkey_7) =
                                   sigtrue then
                                    (event eVerifiedSignatureR( cid_2, pkI_7, pkR_7, nonceR_in_7,
@@ -614,7 +625,8 @@ let R(cid_2:bitstring, skR_2:bitstring, R_2:bitstring)=
                                                                 pk_attkey_7
                                                );
                                          event eAttestationAcceptedR( cid_2, pkI_7, pkR_7, nonceR_in_7,
-                                                                      signature_in_7, G_XY_2, TH_3_7
+                                                                      signature_in_7, G_XY_2, G_X_2, G_Y_2,
+                                                                      TH_3_7, pk_attkey_7, ID_CRED_Att_2
                                                );
                                          let PRK_out_13:bitstring=edhoc_kdf(PRK_4e3m_7, sseven, TH_4_7,
                                                                             hash_length) in
@@ -631,12 +643,10 @@ let R(cid_2:bitstring, skR_2:bitstring, R_2:bitstring)=
                                          event eAcceptRData( PRK_out_13, method_two, pkI_7, pkR_7, Y_2, G_X_2,
                                                              (TH_2_2, (TH_3_7, (TH_4_7, (suitesI_2, (EAD_1_2, (EAD_2_7, (EAD_3_7, (m1_2, (plaintext_2_7, plaintext_3_7)))))))))
                                                );
-                                         event eFinishR( cid_2, method_two, pkI_7, pkR_7, G_XY_2, Y_2,
-                                                         nonceR_in_7, signature_in_7, pk_attkey_7
-                                               );
-                                         ((ContactJudgeFromR(ID_CRED_I_7, TH_3_7, pkI_7, EAD_3_7, MAC_3_7,
-                                                             SIGNATURE_or_MAC_3_7))
-                                        | (leakSKey(PRK_out_13)))))
+                                         event eFinishR( cid_2, method_two, pkI_7, pkR_7, G_XY_2, Y_2, G_X_2,
+                                                         G_Y_2, nonceR_in_7, signature_in_7,
+                                                         measurement_hash_R_7, ID_CRED_Att_2, pk_attkey_7
+                                               )))
                                else
                                    (let PRK_out_14:bitstring=edhoc_kdf(PRK_4e3m_7, sseven, TH_4_7,
                                                                        hash_length) in
@@ -649,10 +659,7 @@ let R(cid_2:bitstring, skR_2:bitstring, R_2:bitstring)=
                                           );
                                     event eAcceptRData( PRK_out_14, method_two, pkI_7, pkR_7, Y_2, G_X_2,
                                                         (TH_2_2, (TH_3_7, (TH_4_7, (suitesI_2, (EAD_1_2, (EAD_2_7, (EAD_3_7, (m1_2, (plaintext_2_7, plaintext_3_7)))))))))
-                                          );
-                                    ((ContactJudgeFromR(ID_CRED_I_7, TH_3_7, pkI_7, EAD_3_7, MAC_3_7,
-                                                        SIGNATURE_or_MAC_3_7))
-                                   | (leakSKey(PRK_out_14)))))))
+                                          )))))
                 else
                     (if method_2 = method_three then
                          (new nonceR_8:bitstring;
@@ -687,7 +694,6 @@ let R(cid_2:bitstring, skR_2:bitstring, R_2:bitstring)=
                           let plaintext_3_8:bitstring=aeaddec(CIPHERTEXT_3_8, K_3_8, IV_3_8) in
                           let (ID_CRED_I_8:bitstring, (SIGNATURE_or_MAC_3_8:bitstring, EAD_3_8:bitstring))=plaintext_3_8 in
                           let pkI_8:bitstring=get_DH_cred(ID_CRED_I_8) in
-                          let pk_attkey_8:bitstring=get_p_attkey(ID_CRED_I_8) in
                           let TH_4_8:bitstring=hash((wrap(TH_3_8), (plaintext_3_8, pkI_8))) in
                           let pkIY_4:bitstring=exp(pkI_8, Y_2) in
                           let SALT_4e3m_4:bitstring=edhoc_kdf(PRK_3e2m_8, sfive, TH_3_8,
@@ -700,8 +706,12 @@ let R(cid_2:bitstring, skR_2:bitstring, R_2:bitstring)=
                               (if ID_CRED_R_2 = check_cred(ID_CRED_I_8) then
                                    (0)
                                else
-                                   (let (ID_CRED_I_in_8:bitstring, (nonceR_in_8:bitstring, signature_in_8:bitstring))=EAD_3_8 in
-                                    if verify(signature_in_8, (sSignature1, (ID_CRED_I_in_8, nonceR_in_8)),
+                                   (event eAccept_Auth( cid_2, ID_CRED_I_8, TH_3_8 );
+                                    let (=ID_CRED_Att_2, (nonceR_in_8:bitstring, signature_in_8:bitstring))=EAD_3_8 in
+                                    let measurement_hash_R_8:bitstring=get_meas(ID_CRED_Att_2) in
+                                    let pk_attkey_8:bitstring=get_att_key(ID_CRED_Att_2) in
+                                    if verify(signature_in_8,
+                                              (sSignature1, (ID_CRED_Att_2, (nonceR_in_8, measurement_hash_R_8))),
                                               pk_attkey_8) =
                                        sigtrue then
                                         (event eVerifiedSignatureR( cid_2, pkI_8, pkR_8, nonceR_in_8,
@@ -713,7 +723,9 @@ let R(cid_2:bitstring, skR_2:bitstring, R_2:bitstring)=
                                                                      pk_attkey_8
                                                     );
                                               event eAttestationAcceptedR( cid_2, pkI_8, pkR_8, nonceR_in_8,
-                                                                           signature_in_8, G_XY_2, TH_3_8
+                                                                           signature_in_8, G_XY_2, G_X_2,
+                                                                           G_Y_2, TH_3_8, pk_attkey_8,
+                                                                           ID_CRED_Att_2
                                                     );
                                               let PRK_out_15:bitstring=edhoc_kdf(PRK_4e3m_8, sseven, TH_4_8,
                                                                                  hash_length) in
@@ -732,11 +744,9 @@ let R(cid_2:bitstring, skR_2:bitstring, R_2:bitstring)=
                                                                   (TH_2_2, (TH_3_8, (TH_4_8, (suitesI_2, (EAD_1_2, (EAD_2_8, (EAD_3_8, (m1_2, (plaintext_2_8, plaintext_3_8)))))))))
                                                     );
                                               event eFinishR( cid_2, method_three, pkI_8, pkR_8, G_XY_2, Y_2,
-                                                              nonceR_in_8, signature_in_8, pk_attkey_8
-                                                    );
-                                              ((ContactJudgeFromR(ID_CRED_I_8, TH_3_8, pkI_8, EAD_3_8,
-                                                                  MAC_3_8, SIGNATURE_or_MAC_3_8))
-                                             | (leakSKey(PRK_out_15)))))
+                                                              G_X_2, G_Y_2, nonceR_in_8, signature_in_8,
+                                                              measurement_hash_R_8, ID_CRED_Att_2, pk_attkey_8
+                                                    )))
                                     else
                                         (let PRK_out_16:bitstring=edhoc_kdf(PRK_4e3m_8, sseven, TH_4_8,
                                                                             hash_length) in
@@ -750,10 +760,7 @@ let R(cid_2:bitstring, skR_2:bitstring, R_2:bitstring)=
                                          event eAcceptRData( PRK_out_16, method_three, pkI_8, pkR_8, Y_2,
                                                              G_X_2,
                                                              (TH_2_2, (TH_3_8, (TH_4_8, (suitesI_2, (EAD_1_2, (EAD_2_8, (EAD_3_8, (m1_2, (plaintext_2_8, plaintext_3_8)))))))))
-                                               );
-                                         ((ContactJudgeFromR(ID_CRED_I_8, TH_3_8, pkI_8, EAD_3_8, MAC_3_8,
-                                                             SIGNATURE_or_MAC_3_8))
-                                        | (leakSKey(PRK_out_16)))))))))))).
+                                               )))))))))).
 let compromise(sk_2:bitstring)=
     in(att,=sComp);
     event eCompromise( pk(sk_2) );
@@ -781,16 +788,20 @@ process
        new ltdh_2:bitstring;
        new computerId_2:bitstring;
        new ak_2:bitstring;
-       let idd_2:bitstring=id(pk(sk_2), exp(g, ltdh_2), pk(ak_2)) in
-       out(att,(idd_2, (pk(sk_2), (exp(g, ltdh_2), pk(ak_2)))));
+       new measurement_2:bitstring;
+       let idd_2:bitstring=id(pk(sk_2), exp(g, ltdh_2)) in
+       out(att,(idd_2, (pk(sk_2), exp(g, ltdh_2))));
+       let idd_att_2:bitstring=id_att(hash(measurement_2), pk(ak_2)) in
        event eShareLT( ltdh_2 );
        event eHonest( pk(sk_2) );
        event eHonest( exp(g, ltdh_2) );
+       event eHonest( pk(ak_2) );
+       event eHonest( hash(measurement_2) );
        ((((((((!
                (in(att,cred_2:bitstring);
-                I(computerId_2, sk_2, ltdh_2, ak_2, cred_2)))
+                I(computerId_2, sk_2, ltdh_2, ak_2, measurement_2, cred_2)))
             | (!
-               (R(computerId_2, sk_2, ltdh_2)))))
+               (R(computerId_2, sk_2, ltdh_2, idd_att_2)))))
           | (compromise(sk_2))))
         | (compromiseDH(ltdh_2))))
       | (LeakAttKey(ak_2))))))
@@ -806,7 +817,11 @@ Inexistant lemma actions
   but no rule has such an action.
   
   lemma `AgreementParamaters' references action 
-    fact "FinishR" (arity 9, Linear) 
+    fact "FinishI" (arity 14, Linear) 
+  but no rule has such an action.
+  
+  lemma `AgreementParamaters' references action 
+    fact "FinishR" (arity 13, Linear) 
   but no rule has such an action.
   
   lemma `AgreementParamaters' references action 
@@ -818,7 +833,7 @@ Inexistant lemma actions
   but no rule has such an action.
   
   lemma `AgreementParamaters' references action 
-    fact "SentByI" (arity 10, Linear) 
+    fact "LeakAttKey" (arity 1, Linear) 
   but no rule has such an action.
 
 Restriction actions
@@ -832,34 +847,28 @@ Restriction actions
 ====================
 
   lemma `AgreementParamaters' cannot be converted to a guarded formula:
-    unguarded variable(s) 'cidI', 'ak' in the subformula
-      "∀ cidI cidR method pkI pkR gxy y nonce sig ak pk_attkey #i #j #k.
-        (((FinishR( cidR, method, pkI, pkR, gxy, y, nonce, sig, pk_attkey
-           ) @ #i) ∧
-          (Honest( pkI ) @ #j)) ∧
-         (Honest( pkR ) @ #k)) ⇒
-        ((((∃ cidI.1 ak.1 x #t.
-             (SentByI( cidI.1, method, pkI, pkR, gxy, x, nonce, sig, ak.1,
-                       pk_attkey
-              ) @ #t) ∧
-             (#t < #i)) ∨
-           (∃ pkR.1 #t. (Compromise( pkR.1 ) @ #t) ∧ (#t < #i))) ∨
-          (∃ pkI.1 #t. (Compromise( pkI.1 ) @ #t) ∧ (#t < #i))) ∨
-         (∃ ak.1 #t. (Compromise( ak.1 ) @ #t) ∧ (#t < #i)))"
+    unguarded variable(s) 'x' in the subformula
+      "∃ cidI x ak x.1 #t.
+        (FinishI( cidI, method, pkI, pkR, gxy, x.1, gx, gy, nonce, sig,
+                  dev_state, id_att, ak, pk_attkey
+         ) @ #t) ∧
+        (#t < #i)"
     in the formula
-      "∀ cidI cidR method pkI pkR gxy y nonce sig ak pk_attkey #i #j #k.
-        (((FinishR( cidR, method, pkI, pkR, gxy, y, nonce, sig, pk_attkey
+      "∀ cidR method pkI pkR gxy y gx gy nonce sig dev_state id_att
+         pk_attkey #i #j #k.
+        (((FinishR( cidR, method, pkI, pkR, gxy, y, gx, gy, nonce, sig,
+                    dev_state, id_att, pk_attkey
            ) @ #i) ∧
           (Honest( pkI ) @ #j)) ∧
          (Honest( pkR ) @ #k)) ⇒
-        ((((∃ cidI.1 ak.1 x #t.
-             (SentByI( cidI.1, method, pkI, pkR, gxy, x, nonce, sig, ak.1,
-                       pk_attkey
+        ((((∃ cidI x ak x.1 #t.
+             (FinishI( cidI, method, pkI, pkR, gxy, x.1, gx, gy, nonce, sig,
+                       dev_state, id_att, ak, pk_attkey
               ) @ #t) ∧
              (#t < #i)) ∨
            (∃ pkR.1 #t. (Compromise( pkR.1 ) @ #t) ∧ (#t < #i))) ∨
           (∃ pkI.1 #t. (Compromise( pkI.1 ) @ #t) ∧ (#t < #i))) ∨
-         (∃ ak.1 #t. (Compromise( ak.1 ) @ #t) ∧ (#t < #i)))"
+         (∃ ak #t. (LeakAttKey( ak ) @ #t) ∧ (#t < #i)))"
 *)
 
 (*
@@ -881,7 +890,11 @@ Inexistant lemma actions
   but no rule has such an action.
   
   lemma `AgreementParamaters' references action 
-    fact "FinishR" (arity 9, Linear) 
+    fact "FinishI" (arity 14, Linear) 
+  but no rule has such an action.
+  
+  lemma `AgreementParamaters' references action 
+    fact "FinishR" (arity 13, Linear) 
   but no rule has such an action.
   
   lemma `AgreementParamaters' references action 
@@ -893,7 +906,7 @@ Inexistant lemma actions
   but no rule has such an action.
   
   lemma `AgreementParamaters' references action 
-    fact "SentByI" (arity 10, Linear) 
+    fact "LeakAttKey" (arity 1, Linear) 
   but no rule has such an action.
 
 Restriction actions
@@ -907,34 +920,28 @@ Restriction actions
 ====================
 
   lemma `AgreementParamaters' cannot be converted to a guarded formula:
-    unguarded variable(s) 'cidI', 'ak' in the subformula
-      "∀ cidI cidR method pkI pkR gxy y nonce sig ak pk_attkey #i #j #k.
-        (((FinishR( cidR, method, pkI, pkR, gxy, y, nonce, sig, pk_attkey
-           ) @ #i) ∧
-          (Honest( pkI ) @ #j)) ∧
-         (Honest( pkR ) @ #k)) ⇒
-        ((((∃ cidI.1 ak.1 x #t.
-             (SentByI( cidI.1, method, pkI, pkR, gxy, x, nonce, sig, ak.1,
-                       pk_attkey
-              ) @ #t) ∧
-             (#t < #i)) ∨
-           (∃ pkR.1 #t. (Compromise( pkR.1 ) @ #t) ∧ (#t < #i))) ∨
-          (∃ pkI.1 #t. (Compromise( pkI.1 ) @ #t) ∧ (#t < #i))) ∨
-         (∃ ak.1 #t. (Compromise( ak.1 ) @ #t) ∧ (#t < #i)))"
+    unguarded variable(s) 'x' in the subformula
+      "∃ cidI x ak x.1 #t.
+        (FinishI( cidI, method, pkI, pkR, gxy, x.1, gx, gy, nonce, sig,
+                  dev_state, id_att, ak, pk_attkey
+         ) @ #t) ∧
+        (#t < #i)"
     in the formula
-      "∀ cidI cidR method pkI pkR gxy y nonce sig ak pk_attkey #i #j #k.
-        (((FinishR( cidR, method, pkI, pkR, gxy, y, nonce, sig, pk_attkey
+      "∀ cidR method pkI pkR gxy y gx gy nonce sig dev_state id_att
+         pk_attkey #i #j #k.
+        (((FinishR( cidR, method, pkI, pkR, gxy, y, gx, gy, nonce, sig,
+                    dev_state, id_att, pk_attkey
            ) @ #i) ∧
           (Honest( pkI ) @ #j)) ∧
          (Honest( pkR ) @ #k)) ⇒
-        ((((∃ cidI.1 ak.1 x #t.
-             (SentByI( cidI.1, method, pkI, pkR, gxy, x, nonce, sig, ak.1,
-                       pk_attkey
+        ((((∃ cidI x ak x.1 #t.
+             (FinishI( cidI, method, pkI, pkR, gxy, x.1, gx, gy, nonce, sig,
+                       dev_state, id_att, ak, pk_attkey
               ) @ #t) ∧
              (#t < #i)) ∨
            (∃ pkR.1 #t. (Compromise( pkR.1 ) @ #t) ∧ (#t < #i))) ∨
           (∃ pkI.1 #t. (Compromise( pkI.1 ) @ #t) ∧ (#t < #i))) ∨
-         (∃ ak.1 #t. (Compromise( ak.1 ) @ #t) ∧ (#t < #i)))"
+         (∃ ak #t. (LeakAttKey( ak ) @ #t) ∧ (#t < #i)))"
 *)
 
 (*

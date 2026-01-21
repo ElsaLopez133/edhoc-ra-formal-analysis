@@ -94,7 +94,7 @@ set preciseActions=true.
 
 
 (* can be used to restrict methods *)
-restriction m:bitstring; event(eMethodOk(m)) ==> m=method_two.
+restriction m:bitstring; event(eMethodOk(m)) ==> m=method_three.
 
 (*AgreementParamaters*)
 query ak:bitstring, cidI:bitstring, cidR:bitstring, dev_state:bitstring,
@@ -839,7 +839,7 @@ Inexistant lemma actions
 Restriction actions
 ===================
 
-  restriction `method_two' references action 
+  restriction `method_three' references action 
     fact "MethodOk" (arity 1, Linear) 
   but no rule has such an action.
 
@@ -912,7 +912,7 @@ Inexistant lemma actions
 Restriction actions
 ===================
 
-  restriction `method_two' references action 
+  restriction `method_three' references action 
     fact "MethodOk" (arity 1, Linear) 
   but no rule has such an action.
 
