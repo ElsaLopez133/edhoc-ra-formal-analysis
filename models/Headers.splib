@@ -136,9 +136,9 @@ let CompromiseShare(s) = event LeakShare('null'); 0
 export queries:
  "
 set preciseActions=true.
-set simplifyProcess = false.
-set reconstructTrace = false.
 "
+// set simplifyProcess = false.
+// set reconstructTrace = false.
 
 #ifdef NonRepudiation 
 

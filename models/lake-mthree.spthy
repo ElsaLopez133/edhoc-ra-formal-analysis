@@ -49,9 +49,6 @@ functions: method_three/0, length/0,
 equations:
 			get_DH_cred(id(x,y))=y,
             get_sig_cred(id(x,y))=x,
-			//   get_DH_cred(id(x,y,z))=y,
-//            get_sig_cred(id(x,y,z))=x,
-        //    get_p_attkey(id(x,y,z))=z,
 			get_meas(id_att(x,y))=x,
 			get_att_key(id_att(x,y))=y,
             aeaddec(aeadenc(m,r,k,ad),k,ad) = m
@@ -195,8 +192,6 @@ let I(~cid, ~skI, ~I, ~ak, ~measurement, ID_CRED_R) =
 				let signature = sign(<'Signature1', ID_CRED_Att, nonceR, measurement_hash>,'rep', ~ak) in
 				let EAD_3 = < ID_CRED_Att, nonceR, signature> in
 				event AttestationGeneratedI(~cid, pkI, pkR, nonceR, signature, ~ak, ~X, G_YX);
-				event AttGeneratedI(~cid, ID_CRED_Att, nonceR, TH_3);
-				event Att_generate(nonceR, TH_3, G_YX, pk(~ak));
     	        event THIShared(pkI, TH_3); 		
 				let G_YI = G_Y^~I in
 
@@ -290,7 +285,6 @@ let R(~cid, ~skR,~R, ID_CRED_Att) =
 			) 
 			else (
 				let <=ID_CRED_Att, nonceR_in, signature_in> = EAD_3 in        
-				// if (verify(signature_in, <'Signature1',ID_CRED_I_in, nonceR_in, measurement_hash_R>, pk_attkey) = sigtrue) then (
 				let measurement_hash_R = get_meas(ID_CRED_Att) in
 				let pk_attkey = get_att_key(ID_CRED_Att) in
 				if (verify(signature_in, <'Signature1', ID_CRED_Att, nonceR_in, measurement_hash_R>, pk_attkey) = sigtrue) then (
@@ -298,8 +292,8 @@ let R(~cid, ~skR,~R, ID_CRED_Att) =
 					if (~nonceR = nonceR_in) then (
 						event VerifiedNonceR(~cid, method_three, pkI, pkR, signature_in, nonceR_in, ~Y, G_XY, pk_attkey);
 						event AttestationAcceptedR(~cid, pkI, pkR, nonceR_in, signature_in, G_XY, G_X, G_Y, TH_3, pk_attkey, ID_CRED_Att);
-						event Accept_Att(~cid, ID_CRED_Att, nonceR_in, TH_3);
-						event Att_good(nonceR_in, TH_3, G_XY, pk_attkey);
+						// event Accept_Att(~cid, ID_CRED_Att, nonceR_in, TH_3);
+						// event Att_good(nonceR_in, TH_3, G_XY, pk_attkey);
 						let PRK_out = edhoc_kdf(PRK_4e3m, 'seven', TH_4, hash_length) in
 						event AcceptR(~cid,method_three,pkI,pkR,PRK_4e3m,PRK_out,~Y,G_X);
 						event AcceptRRA(~cid,method_three,pkI,pkR,PRK_4e3m,PRK_out,~Y,G_X, G_XY);
