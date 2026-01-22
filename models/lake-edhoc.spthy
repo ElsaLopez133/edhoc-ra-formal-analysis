@@ -382,19 +382,20 @@ let R(~cid, ~skR,~R) =
 	    
    	    let MAC_3 = edhoc_kdf(PRK_4e3m, 'six', <ID_CRED_I, TH_3, pkI,EAD_3>,hash_length) in	    
 	    
-		if (verify(SIGNATURE_or_MAC_3,<'Signature2',ID_CRED_I,TH_3,pkI,EAD_3,MAC_3>, pkI) = sigtrue) then 
-	    (if (ID_CRED_R = check_cred(ID_CRED_I)) then ( // Not in the standard: we test if we did not receive our own cred
-		   0
-		) else (   
-  		    let PRK_out = edhoc_kdf(PRK_4e3m, 'seven', TH_4, hash_length) in
-            event AcceptR(~cid,method_zero,pkI,pkR,PRK_4e3m,PRK_out,~Y,G_X);
-		    event SecretsR(~cid,method_zero,pkI,pkR,PRK_2e,PRK_3e2m,PRK_4e3m,PRK_out,KEYSTREAM_2,K_3,IV_3,~Y,G_X);						    
-		    event AcceptRData(PRK_out,method_zero,pkI,pkR,~Y,G_X,<TH_2,TH_3,TH_4,suitesI, EAD_1, EAD_2, EAD_3, m1, plaintext_2, plaintext_3>);
-		    (
-		    	ContactJudgeFromR(ID_CRED_I,TH_3,pkI,EAD_3,MAC_3,SIGNATURE_or_MAC_3,)
-		    	|
- 		   		leakSKey(PRK_out)
-		    )
+		if (verify(SIGNATURE_or_MAC_3,<'Signature2',ID_CRED_I,TH_3,pkI,EAD_3,MAC_3>, pkI) = sigtrue) then (
+			if (ID_CRED_R = check_cred(ID_CRED_I)) then ( // Not in the standard: we test if we did not receive our own cred
+		   		0
+			) else (   
+				let PRK_out = edhoc_kdf(PRK_4e3m, 'seven', TH_4, hash_length) in
+				event AcceptR(~cid,method_zero,pkI,pkR,PRK_4e3m,PRK_out,~Y,G_X);
+				event SecretsR(~cid,method_zero,pkI,pkR,PRK_2e,PRK_3e2m,PRK_4e3m,PRK_out,KEYSTREAM_2,K_3,IV_3,~Y,G_X);						    
+				event AcceptRData(PRK_out,method_zero,pkI,pkR,~Y,G_X,<TH_2,TH_3,TH_4,suitesI, EAD_1, EAD_2, EAD_3, m1, plaintext_2, plaintext_3>);
+				(
+					ContactJudgeFromR(ID_CRED_I,TH_3,pkI,EAD_3,MAC_3,SIGNATURE_or_MAC_3,)
+					|
+					leakSKey(PRK_out)
+				)
+			)
 		)
 	) else (
 	if (method = method_one) then (
@@ -539,7 +540,7 @@ let R(~cid, ~skR,~R) =
 			)
   		)
 	)
-)))))
+))))
 	
 let compromise(sk) =
     in('Comp'); event Compromise(pk(sk)); out(sk)
