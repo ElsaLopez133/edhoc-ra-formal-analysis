@@ -22,7 +22,7 @@ The case-studies are based on the Sapic+ protocol platform, which allows from a 
 
 ## High Level Description
 
-In `model`, you will find two `.spthy` files, the tamarin and Sapic+ input format, that correspond to the protocol:
+In `models`, you will find two `.spthy` files, the tamarin and Sapic+ input format, that correspond to the protocol:
  * `lake-edhoc-ra.spthy` -> the model with 4 authentication methods under the latest version of the draft-ietf-lake-ra (version -03)
  * `lake-edhoc-ra-fix.spthy`  -> the model with proposed fix to mitigate the found attack.
  
@@ -37,4 +37,5 @@ In `model`, you will find two `.spthy` files, the tamarin and Sapic+ input forma
 ## Acknolwdegments
 
 This repository follows https://github.com/charlie-j/edhoc-formal-analysis/tree/master
+
 
