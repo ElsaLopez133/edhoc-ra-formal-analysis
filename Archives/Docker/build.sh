@@ -1,3 +1,0 @@
-#!/usr/bin/env bash
-# call in top-level dir...
-docker build -t protocolanalysis/lake-edhoc:draft-14 -f Docker/Dockerfile .
